@@ -28,12 +28,26 @@ jobs:
           mkdir -p public
           unzip -o DENTAL_JG_PANEL_ADMIN_CONFIGURADO.zip -d public
           find public -name "*.zip" -delete
+          INDEX=$(find public -type f -name index.html | head -n 1)
+          if [ -z "$INDEX" ]; then
+            echo "ERROR: No se encontró index.html dentro del ZIP"
+            find public -maxdepth 4 -type f
+            exit 1
+          fi
+          DIR=$(dirname "$INDEX")
+          if [ "$DIR" != "public" ]; then
+            cp -a "$DIR"/. public/
+          fi
+          test -f public/index.html
 
-      - name: Publicar sitio
+      - name: Preparar publicación
+        uses: actions/configure-pages@v5
+
+      - name: Subir sitio
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
-      - name: Desplegar sitio
+      - name: Publicar sitio
         uses: actions/deploy-pages@v4
         
