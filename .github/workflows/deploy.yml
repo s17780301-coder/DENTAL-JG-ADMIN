@@ -1,0 +1,40 @@
+name: Publicar panel DENTAL JG
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar archivos
+        uses: actions/checkout@v4
+
+      - name: Extraer ZIP
+        run: |
+          mkdir -p public
+          unzip -o DENTAL_JG_PANEL_ADMIN_CONFIGURADO.zip -d public
+          find public -name "*.zip" -delete
+
+      - name: Preparar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Publicar sitio
+        uses: actions/deploy-pages@v4
