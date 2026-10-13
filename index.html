@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102a43"><title>DENTAL JG | Panel administrativo</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <main id="loginView" class="login-shell">
+    <section class="login-card">
+      <div class="brand-mark">DJG</div><p class="eyebrow">CONTROL ADMINISTRATIVO</p>
+      <h1>DENTAL <span>JG</span></h1><p class="muted">Cobranza clara. Información al día.</p>
+      <form id="loginForm" class="stack">
+        <label>Correo administrativo<input id="email" type="email" autocomplete="username" placeholder="admin@tudominio.com" required></label>
+        <label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required></label>
+        <button class="primary" type="submit">Iniciar sesión</button>
+      </form>
+      <p id="loginMessage" class="message" role="status"></p>
+      <p class="tiny">Acceso privado para personal autorizado.</p>
+    </section>
+  </main>
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand-row"><div class="brand-mark small">DJG</div><div><b>DENTAL JG</b><small>Administración</small></div></div>
+      <nav><button class="nav active" data-page="overview">▦ <span>Resumen</span></button><button class="nav" data-page="patients">♙ <span>Pacientes</span></button><button class="nav" data-page="payments">↗ <span>Cobranza</span></button><button class="nav" data-page="clinics">⌂ <span>Clínicas</span></button></nav>
+      <div class="side-bottom"><div class="connection"><i id="connectionDot"></i><span id="connectionText">Conectando…</span></div><button id="logoutBtn" class="logout">Cerrar sesión ↗</button></div>
+    </aside>
+    <section class="content">
+      <header class="topbar"><div><p class="eyebrow">PANEL ADMINISTRATIVO</p><h2 id="pageTitle">Resumen general</h2><label class="clinic-filter-label" for="clinicFilter">Clínica que estás viendo</label><select id="clinicFilter" class="clinic-filter"><option value="__all__">Todas las clínicas</option></select></div><div class="user-chip"><div class="avatar">A</div><div><b>Administrador</b><small id="todayLabel"></small></div></div></header>
+      <div id="setupNotice" class="notice hidden"><b>Falta conectar la base de datos.</b><span>Abre <code>config.js</code> y coloca la URL y la clave pública de tu proyecto Supabase. Consulta LEEME.txt.</span></div>
+      <section id="overviewPage" class="page">
+        <div class="welcome"><div><p class="eyebrow light">BIENVENIDO A DENTAL JG</p><h3>Tu cobranza, bajo control.</h3><p>Revisa los movimientos y el estado de tus pacientes en un solo lugar.</p></div><div class="welcome-icon">✦</div></div>
+        <div class="metric-grid">
+          <article class="metric"><div class="metric-icon blue">♙</div><p>Pacientes registrados</p><strong id="metricPatients">—</strong><small>En la base de datos</small></article>
+          <article class="metric"><div class="metric-icon green">$</div><p>Total cobrado</p><strong id="metricCollected">—</strong><small>Pagos registrados</small></article>
+          <article class="metric"><div class="metric-icon amber">◷</div><p>Saldo pendiente</p><strong id="metricPending">—</strong><small>De todos los pacientes</small></article>
+          <article class="metric"><div class="metric-icon violet">✓</div><p>Pacientes al corriente</p><strong id="metricPaid">—</strong><small>Sin saldo pendiente</small></article>
+        </div>
+        <div class="section-heading"><div><h3>Actividad reciente</h3><p>Los movimientos más recientes registrados.</p></div><button class="outline" data-goto="payments">Ver cobranza →</button></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Movimiento</th><th>Fecha</th><th>Importe</th></tr></thead><tbody id="recentRows"><tr><td colspan="4" class="empty">Conecta la base de datos para mostrar información.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="patientsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Registrar paciente</h3><p>Completa los datos y guarda el paciente en Supabase.</p></div></div>
+        <div class="clinic-form-card patient-form-card">
+          <form id="patientForm" class="patient-form">
+            <label for="patientName">Nombre completo *</label><input id="patientName" maxlength="160" placeholder="Nombre del paciente" required>
+            <label for="patientPhone">Teléfono</label><input id="patientPhone" type="tel" maxlength="40" placeholder="Teléfono de contacto">
+            <label for="patientTreatment">Tratamiento</label><input id="patientTreatment" maxlength="200" placeholder="Tratamiento dental">
+            <label for="patientClinic">Clínica *</label><select id="patientClinic" required><option value="">Selecciona una clínica</option></select>
+            <label for="patientPolicy">Número de póliza</label><input id="patientPolicy" maxlength="100" placeholder="Opcional">
+            <label for="patientTotal">Costo total del tratamiento (MXN) *</label><input id="patientTotal" type="number" min="0" step="0.01" value="0" required>
+            <label for="patientInstallments">Número de pagos</label><input id="patientInstallments" type="number" min="0" step="1" value="0">
+            <label for="patientInstallmentAmount">Importe por pago (MXN)</label><input id="patientInstallmentAmount" type="number" min="0" step="0.01" value="0">
+            <button class="primary" type="submit">+ Guardar paciente</button>
+            <p class="form-hint">El paciente se guardará en la clínica seleccionada. El saldo inicial pagado será $0.</p>
+          </form>
+        </div>
+        <div class="section-heading"><div><h3>Directorio de pacientes</h3><p>Consulta información clínica y saldos.</p></div><div class="toolbar"><input id="patientSearch" class="search" placeholder="Buscar paciente…"><button id="refreshPatients" class="outline" type="button">Actualizar ↻</button></div></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Teléfono</th><th>Clínica</th><th>Póliza</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody id="patientRows"><tr><td colspan="7" class="empty">No hay datos todavía.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="clinicsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Administrar clínicas</h3><p>Agrega las clínicas que quieras manejar desde este mismo panel.</p></div></div>
+        <div class="clinic-form-card"><form id="clinicForm" class="clinic-form"><label for="clinicName">Nombre de la nueva clínica</label><div class="clinic-form-row"><input id="clinicName" maxlength="100" placeholder="Ej. DENTAL JG Centro" required><button class="primary" type="submit">+ Agregar clínica</button></div><p class="form-hint">La clínica se guardará en Supabase y aparecerá en el selector para filtrar el panel.</p></form></div>
+        <div class="section-heading"><div><h3>Clínicas registradas</h3><p id="clinicCount">0 clínicas</p></div><button id="refreshClinics" class="outline" type="button">Actualizar ↻</button></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Clínica</th><th>Pacientes</th><th>Acción</th></tr></thead><tbody id="clinicRows"><tr><td colspan="3" class="empty">Carga las clínicas para comenzar.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="paymentsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Registro de cobranza</h3><p>Historial de pagos confirmados.</p></div><div class="toolbar"><input id="paymentSearch" class="search" placeholder="Buscar paciente…"><button id="refreshPayments" class="outline">Actualizar ↻</button></div></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Fecha y hora</th><th>Concepto</th><th>Importe</th><th>Referencia</th></tr></thead><tbody id="paymentRows"><tr><td colspan="5" class="empty">No hay pagos todavía.</td></tr></tbody></table></div></div>
+      </section>
+      <footer> DENTAL JG · Panel administrativo <span>Los datos se actualizan al recibir cambios de la base de datos.</span></footer>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="config.js"></script><script src="app.js"></script>
+</body></html>
