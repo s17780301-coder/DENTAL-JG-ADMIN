@@ -3,8 +3,7 @@ name: Publicar panel DENTAL JG
 on:
 workflow_dispatch:
 push:
-branches:
-- main
+branches: [main]
 
 permissions:
 contents: read
@@ -17,23 +16,15 @@ runs-on: ubuntu-latest
 steps:
 - name: Descargar archivos
 uses: actions/checkout@v4
-
-  - name: Verificar archivos
-    run: |
-      mkdir -p public
-      test -f index.html
-      test -f app.js
-      test -f styles.css
-      test -f config.js
-      cp index.html app.js styles.css config.js public/
-
-  - name: Configurar Pages
-    uses: actions/configure-pages@v5
-
-  - name: Subir archivos
-    uses: actions/upload-pages-artifact@v3
-    with:
-      path: public
-
-  - name: Publicar sitio
-    uses: actions/deploy-pages@v4
+- name: Verificar archivos
+run: "test -f index.html && test -f app.js && test -f styles.css && test -f config.js"
+- name: Preparar carpeta
+run: "mkdir -p public && cp index.html app.js styles.css config.js public/"
+- name: Configurar Pages
+uses: actions/configure-pages@v5
+- name: Subir sitio
+uses: actions/upload-pages-artifact@v3
+with:
+path: public
+- name: Publicar sitio
+uses: actions/deploy-pages@v4
