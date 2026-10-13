@@ -1,53 +1,43 @@
-
 name: Publicar panel DENTAL JG
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+workflow_dispatch:
+push:
+branches:
+- main
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+contents: read
+pages: write
+id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+group: pages
+cancel-in-progress: true
 
 jobs:
-  publicar:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Descargar archivos
-        uses: actions/checkout@v4
+publicar:
+runs-on: ubuntu-latest
+steps:
+- name: Descargar archivos
+uses: actions/checkout@v4
 
-      - name: Extraer ZIP
-        run: |
-          mkdir -p public
-          unzip -o DENTAL_JG_PANEL_ADMIN_CONFIGURADO.zip -d public
-          find public -name "*.zip" -delete
-          INDEX=$(find public -type f -name index.html | head -n 1)
-          if [ -z "$INDEX" ]; then
-            echo "ERROR: No se encontró index.html dentro del ZIP"
-            find public -maxdepth 4 -type f
-            exit 1
-          fi
-          DIR=$(dirname "$INDEX")
-          if [ "$DIR" != "public" ]; then
-            cp -a "$DIR"/. public/
-          fi
-          test -f public/index.html
+  - name: Verificar archivos del panel
+    run: |
+      test -f index.html
+      test -f app.js
+      test -f styles.css
+      test -f config.js
+      mkdir -p public
+      cp index.html app.js styles.css config.js public/
 
-      - name: Preparar publicación
-        uses: actions/configure-pages@v5
+  - name: Preparar publicación
+    uses: actions/configure-pages@v5
 
-      - name: Subir sitio
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
+  - name: Subir sitio
+    uses: actions/upload-pages-artifact@v3
+    with:
+      path: public
 
-      - name: Publicar sitio
-        uses: actions/deploy-pages@v4
-        
+  - name: Publicar sitio
+    uses: actions/deploy-pages@v4
