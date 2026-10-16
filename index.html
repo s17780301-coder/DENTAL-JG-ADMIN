@@ -1,77 +1,14 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#102a43"><title>DENTAL JG | Panel administrativo</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-  <main id="loginView" class="login-shell">
-    <section class="login-card">
-      <div class="brand-mark">DJG</div><p class="eyebrow">CONTROL ADMINISTRATIVO</p>
-      <h1>DENTAL <span>JG</span></h1><p class="muted">Cobranza clara. Información al día.</p>
-      <form id="loginForm" class="stack">
-        <label>Correo administrativo<input id="email" type="email" autocomplete="username" placeholder="admin@tudominio.com" required></label>
-        <label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required></label>
-        <button class="primary" type="submit">Iniciar sesión</button>
-      </form>
-      <p id="loginMessage" class="message" role="status"></p>
-      <p class="tiny">Acceso privado para personal autorizado.</p>
-    </section>
-  </main>
-  <div id="appView" class="app hidden">
-    <aside class="sidebar">
-      <div class="brand-row"><div class="brand-mark small">DJG</div><div><b>DENTAL JG</b><small>Administración</small></div></div>
-      <nav><button class="nav active" data-page="overview">▦ <span>Resumen</span></button><button class="nav" data-page="patients">♙ <span>Pacientes</span></button><button class="nav" data-page="payments">↗ <span>Cobranza</span></button><button class="nav" data-page="clinics">⌂ <span>Clínicas</span></button></nav>
-      <div class="side-bottom"><div class="connection"><i id="connectionDot"></i><span id="connectionText">Conectando…</span></div><button id="logoutBtn" class="logout">Cerrar sesión ↗</button></div>
-    </aside>
-    <section class="content">
-      <header class="topbar"><div><p class="eyebrow">PANEL ADMINISTRATIVO</p><h2 id="pageTitle">Resumen general</h2><label class="clinic-filter-label" for="clinicFilter">Clínica que estás viendo</label><select id="clinicFilter" class="clinic-filter"><option value="__all__">Todas las clínicas</option></select></div><div class="user-chip"><div class="avatar">A</div><div><b>Administrador</b><small id="todayLabel"></small></div></div></header>
-      <div id="setupNotice" class="notice hidden"><b>Falta conectar la base de datos.</b><span>Abre <code>config.js</code> y coloca la URL y la clave pública de tu proyecto Supabase. Consulta LEEME.txt.</span></div>
-      <section id="overviewPage" class="page">
-        <div class="welcome"><div><p class="eyebrow light">BIENVENIDO A DENTAL JG</p><h3>Tu cobranza, bajo control.</h3><p>Revisa los movimientos y el estado de tus pacientes en un solo lugar.</p></div><div class="welcome-icon">✦</div></div>
-        <div class="metric-grid">
-          <article class="metric"><div class="metric-icon blue">♙</div><p>Pacientes registrados</p><strong id="metricPatients">—</strong><small>En la base de datos</small></article>
-          <article class="metric"><div class="metric-icon green">$</div><p>Total cobrado</p><strong id="metricCollected">—</strong><small>Pagos registrados</small></article>
-          <article class="metric"><div class="metric-icon amber">◷</div><p>Saldo pendiente</p><strong id="metricPending">—</strong><small>De todos los pacientes</small></article>
-          <article class="metric"><div class="metric-icon violet">✓</div><p>Pacientes al corriente</p><strong id="metricPaid">—</strong><small>Sin saldo pendiente</small></article>
-        </div>
-        <div class="section-heading"><div><h3>Actividad reciente</h3><p>Los movimientos más recientes registrados.</p></div><button class="outline" data-goto="payments">Ver cobranza →</button></div>
-        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Movimiento</th><th>Fecha</th><th>Importe</th></tr></thead><tbody id="recentRows"><tr><td colspan="4" class="empty">Conecta la base de datos para mostrar información.</td></tr></tbody></table></div></div>
-      </section>
-      <section id="patientsPage" class="page hidden">
-        <div class="section-heading"><div><h3>Registrar paciente</h3><p>Completa los datos y guarda el paciente en Supabase.</p></div></div>
-        <div class="clinic-form-card patient-form-card">
-          <form id="patientForm" class="patient-form">
-            <label for="patientName">Nombre completo *</label><input id="patientName" maxlength="160" placeholder="Nombre del paciente" required>
-            <label for="patientPhone">Teléfono</label><input id="patientPhone" type="tel" maxlength="40" placeholder="Teléfono de contacto">
-            <label for="patientTreatment">Tratamiento</label><input id="patientTreatment" maxlength="200" placeholder="Tratamiento dental">
-            <label for="patientClinic">Clínica *</label><select id="patientClinic" required><option value="">Selecciona una clínica</option></select>
-            <label for="patientPolicy">Número de póliza</label><input id="patientPolicy" maxlength="100" placeholder="Opcional">
-            <label for="patientTotal">Costo total del tratamiento (MXN) *</label><input id="patientTotal" type="number" min="0" step="0.01" value="0" required>
-            <label for="patientInstallments">Número de pagos</label><input id="patientInstallments" type="number" min="0" step="1" value="0">
-            <label for="patientInstallmentAmount">Importe por pago (MXN)</label><input id="patientInstallmentAmount" type="number" min="0" step="0.01" value="0">
-            <button class="primary" type="submit">+ Guardar paciente</button>
-            <p class="form-hint">El paciente se guardará en la clínica seleccionada. El saldo inicial pagado será $0.</p>
-          </form>
-        </div>
-        <div class="section-heading"><div><h3>Directorio de pacientes</h3><p>Consulta información clínica y saldos.</p></div><div class="toolbar"><input id="patientSearch" class="search" placeholder="Buscar paciente…"><button id="refreshPatients" class="outline" type="button">Actualizar ↻</button></div></div>
-        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Teléfono</th><th>Clínica</th><th>Póliza</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody id="patientRows"><tr><td colspan="7" class="empty">No hay datos todavía.</td></tr></tbody></table></div></div>
-      </section>
-      <section id="clinicsPage" class="page hidden">
-        <div class="section-heading"><div><h3>Administrar clínicas</h3><p>Agrega las clínicas que quieras manejar desde este mismo panel.</p></div></div>
-        <div class="clinic-form-card"><form id="clinicForm" class="clinic-form"><label for="clinicName">Nombre de la nueva clínica</label><div class="clinic-form-row"><input id="clinicName" maxlength="100" placeholder="Ej. DENTAL JG Centro" required><button class="primary" type="submit">+ Agregar clínica</button></div><p class="form-hint">La clínica se guardará en Supabase y aparecerá en el selector para filtrar el panel.</p></form></div>
-        <div class="section-heading"><div><h3>Clínicas registradas</h3><p id="clinicCount">0 clínicas</p></div><button id="refreshClinics" class="outline" type="button">Actualizar ↻</button></div>
-        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Clínica</th><th>Pacientes</th><th>Acción</th></tr></thead><tbody id="clinicRows"><tr><td colspan="3" class="empty">Carga las clínicas para comenzar.</td></tr></tbody></table></div></div>
-      </section>
-      <section id="paymentsPage" class="page hidden">
-        <div class="section-heading"><div><h3>Registro de cobranza</h3><p>Historial de pagos confirmados.</p></div><div class="toolbar"><input id="paymentSearch" class="search" placeholder="Buscar paciente…"><button id="refreshPayments" class="outline">Actualizar ↻</button></div></div>
-        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Fecha y hora</th><th>Concepto</th><th>Importe</th><th>Referencia</th></tr></thead><tbody id="paymentRows"><tr><td colspan="5" class="empty">No hay pagos todavía.</td></tr></tbody></table></div></div>
-      </section>
-      <footer> DENTAL JG · Panel administrativo <span>Los datos se actualizan al recibir cambios de la base de datos.</span></footer>
-    </section>
-  </div>
-  <div id="toast" class="toast" role="status"></div>
-  <script src="config.js"></script><script src="app.js"></script>
-</body></html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#073b3a"><title>DENTAL JG | Panel unificado</title><link rel="stylesheet" href="styles.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body><div id="login" class="login-wrap"><form id="loginForm" class="login-card"><div class="logo">DJG</div><p class="eyebrow">SISTEMA INTEGRAL</p><h1>DENTAL <span>JG</span></h1><p class="muted">Un solo sistema para todas tus aplicaciones.</p><label>Correo de usuario<input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com"></label><label>Contraseña personal<input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label><button class="primary">Entrar de forma segura</button><p id="loginMsg" role="status"></p><small>El acceso depende de la cuenta y permisos asignados por Administración.</small></form></div>
+<div id="app" class="shell hidden"><aside class="sidebar"><div class="brand"><div class="logo small">DJG</div><div><b>DENTAL JG</b><small>Panel unificado</small></div></div><div class="profile"><b id="userEmail">Usuario</b><small id="userRole">Verificando permisos…</small></div><nav id="nav"><button data-view="dashboard" class="nav active">◫ <span>Resumen</span></button><button data-view="patients" class="nav">♙ <span>Registro de clientes</span></button><button data-view="payments" class="nav">＄ <span>Cobranza y pagos</span></button><button data-view="receipts" class="nav">▤ <span>Recibos</span></button><button data-view="portfolios" class="nav">▦ <span>Carteras</span></button><button data-view="managers" class="nav admin-only">♧ <span>Gestores y accesos</span></button><button data-view="clinics" class="nav admin-only">⌂ <span>Clínicas</span></button></nav><div class="side-bottom"><div id="connection">● Conectando…</div><button id="logout" class="logout">Cerrar sesión ↗</button></div></aside>
+<main class="main"><header class="topbar"><div><p class="eyebrow">DENTAL JG · CONTROL CENTRAL</p><h2 id="viewTitle">Resumen general</h2><p class="muted">Los módulos autorizados comparten la misma base de datos.</p></div><div class="top-actions"><span id="today"></span><button id="refresh" class="secondary">Actualizar ↻</button></div></header>
+<div id="notice" class="notice hidden"></div>
+<section id="dashboard" class="view"><div class="hero"><div><p class="eyebrow light">BIENVENIDO</p><h2>Todo conectado. Todo bajo control.</h2><p>Consulta pacientes, movimientos y saldos según los permisos de tu usuario.</p></div><div class="hero-mark">✦</div></div><div class="metrics"><article><span>Pacientes visibles</span><strong id="mPatients">—</strong></article><article><span>Pagos registrados</span><strong id="mPayments">—</strong></article><article><span>Total cobrado</span><strong id="mCollected">—</strong></article><article><span>Saldo pendiente</span><strong id="mPending">—</strong></article></div><div class="panel"><div class="section-head"><div><h3>Movimientos recientes</h3><p>Pagos que se encuentran en la base de datos.</p></div></div><div class="table-scroll"><table><thead><tr><th>Paciente</th><th>Fecha</th><th>Concepto</th><th>Importe</th></tr></thead><tbody id="recentRows"><tr><td colspan="4">Inicia sesión para consultar.</td></tr></tbody></table></div></div></section>
+<section id="patients" class="view hidden"><div class="panel"><div class="section-head"><div><h3>Registro de clientes</h3><p>Alta centralizada de pacientes; la póliza se captura aquí y no se genera en Cobranza.</p></div></div><form id="patientForm" class="form-grid"><label>Nombre completo *<input id="pName" required maxlength="160"></label><label>Teléfono<input id="pPhone" maxlength="40"></label><label>Tratamiento<input id="pTreatment" maxlength="100"></label><label>Clínica *<input id="pClinic" required maxlength="100"></label><label>Número de póliza<input id="pPolicy" maxlength="100"></label><label>Importe total (MXN) *<input id="pTotal" type="number" min="0" step=".01" required value="0"></label><label>Número de pagos<input id="pInstallments" type="number" min="0" step="1" value="0"></label><label>Importe por pago<input id="pInstallmentAmount" type="number" min="0" step=".01" value="0"></label><div class="form-actions"><button class="primary">Guardar cliente</button><span id="patientMsg" class="muted"></span></div></form></div><div class="panel"><div class="section-head"><h3>Directorio de pacientes</h3><input id="patientSearch" placeholder="Buscar paciente o póliza…"></div><div class="table-scroll"><table><thead><tr><th>Paciente</th><th>Clínica</th><th>Póliza</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody id="patientRows"></tbody></table></div></div></section>
+<section id="payments" class="view hidden"><div class="panel"><div class="section-head"><div><h3>Registrar cobranza</h3><p>El sistema valida el importe y vuelve a cargar el saldo desde la base de datos después de guardar.</p></div></div><form id="paymentForm" class="form-grid"><label>Paciente *<select id="payPatient" required><option value="">Selecciona paciente</option></select></label><label>Importe recibido (MXN) *<input id="payAmount" type="number" min=".01" step=".01" required></label><label>Concepto<input id="payConcept" maxlength="120" value="Abono"></label><label>Referencia / nota<input id="payReference" maxlength="160"></label><div class="form-actions"><button class="primary">Registrar pago</button><span id="paymentMsg" class="muted"></span></div></form><p class="warning">Importante: el registro definitivo y la prevención de pagos duplicados deben validarse con las funciones transaccionales y restricciones únicas de Supabase del proyecto.</p></div><div class="panel"><div class="section-head"><h3>Historial de pagos</h3><input id="paymentSearch" placeholder="Buscar movimiento…"></div><div class="table-scroll"><table><thead><tr><th>Paciente</th><th>Fecha</th><th>Concepto</th><th>Importe</th><th>Referencia</th></tr></thead><tbody id="paymentRows"></tbody></table></div></div></section>
+<section id="receipts" class="view hidden"><div class="panel"><div class="section-head"><div><h3>Recibos</h3><p>Consulta recibos emitidos y prepara la impresión.</p></div><button id="loadReceipts" class="secondary" type="button">Cargar recibos</button></div><div class="table-scroll"><table><thead><tr><th>Folio</th><th>Paciente</th><th>Fecha</th><th>Importe</th><th>Concepto</th></tr></thead><tbody id="receiptRows"><tr><td colspan="5">Pulsa “Cargar recibos”.</td></tr></tbody></table></div><p class="warning">Los recibos se consultan desde collection_receipts. La emisión final debe pasar por el RPC seguro ya instalado en Supabase para no duplicar folios.</p></div></section>
+<section id="portfolios" class="view hidden"><div class="panel"><div class="section-head"><div><h3>Carteras de cobranza</h3><p>Espacio de consulta para carteras quincenales y asignación de cuentas.</p></div><button id="loadPortfolios" class="secondary" type="button">Cargar carteras</button></div><div class="table-scroll"><table><thead><tr><th>Quincena</th><th>Paciente</th><th>Clínica</th><th>Póliza</th><th>Saldo</th><th>Gestor</th></tr></thead><tbody id="portfolioRows"><tr><td colspan="6">Pulsa “Cargar carteras”.</td></tr></tbody></table></div><p class="warning">El esquema de carteras puede variar por versión. El módulo muestra un error claro si la tabla o los permisos aún no están configurados.</p></div></section>
+<section id="managers" class="view hidden"><div class="panel"><div class="section-head"><div><h3>Gestores y claves de acceso</h3><p>Los usuarios deben tener cuentas individuales. No se muestran ni se almacenan contraseñas en texto plano.</p></div></div><p>Las cuentas se crean de forma segura en Supabase Authentication. Asigna el rol en <code>app_user_roles</code> y vincula el gestor en <code>collection_managers</code>. Esta vista evita crear claves manuales inseguras desde el navegador.</p><div id="managerInfo" class="notice">Para activar este módulo se requiere confirmar el esquema real de roles/gestores de la base de datos.</div></div></section>
+<section id="clinics" class="view hidden"><div class="panel"><div class="section-head"><h3>Clínicas</h3></div><form id="clinicForm" class="form-grid"><label>Nombre de clínica *<input id="clinicName" required maxlength="100"></label><div class="form-actions"><button class="primary">Agregar clínica</button></div></form><div class="table-scroll"><table><thead><tr><th>Clínica</th><th>Pacientes</th></tr></thead><tbody id="clinicRows"></tbody></table></div></div></section>
+<footer>DENTAL JG · Panel unificado <span>Acceso por usuario · Datos compartidos en Supabase</span></footer></main></div><script src="config.js"></script><script src="app.js"></script></body></html>

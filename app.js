@@ -1,98 +1,58 @@
 (() => {
-  const cfg = window.DENTAL_CONFIG || {};
-  const configured = cfg.supabaseUrl && cfg.supabaseAnonKey && !cfg.supabaseUrl.includes('PEGA_AQUI') && !cfg.supabaseAnonKey.includes('PEGA_AQUI');
-  const $ = id => document.getElementById(id);
-  let client = null, channel = null, patients = [], payments = [], clinics = [], clinicTableAvailable = true;
-  let selectedClinic = '__all__', warnedClinicTable = false;
-  const money = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:2}).format(Number(n)||0);
-  const date = s => s ? new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short'}).format(new Date(s)) : '—';
-  const safe = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function toast(s){$('toast').textContent=s;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),3000)}
-  function msg(s){$('loginMessage').textContent=s}
-  function connection(ok,label){$('connectionDot').classList.toggle('ok',!!ok);$('connectionText').textContent=label}
-  function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('todayLabel').textContent=new Intl.DateTimeFormat('es-MX',{dateStyle:'medium'}).format(new Date()); }
-  function logout(){if(channel&&client)client.removeChannel(channel);channel=null;patients=[];payments=[];clinics=[];$('appView').classList.add('hidden');$('loginView').classList.remove('hidden');if(client)client.auth.signOut();}
-  function goto(page){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));$(page+'Page').classList.remove('hidden');document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('pageTitle').textContent=({overview:'Resumen general',patients:'Pacientes',payments:'Cobranza',clinics:'Clínicas'})[page]||'DENTAL JG';}
-  function nameFor(id){return patients.find(p=>p.id===id)?.name||'Paciente';}
-  function clinicForPayment(p){const patient=patients.find(x=>x.id===p.patient_id);return String(patient?.clinic||p.clinic||'').trim();}
-  function clinicMatches(name){return selectedClinic==='__all__'||String(name||'').trim()===selectedClinic;}
-  function filteredPatients(){return patients.filter(p=>clinicMatches(p.clinic));}
-  function filteredPayments(){return payments.filter(p=>clinicMatches(clinicForPayment(p)));}
-  function renderClinicControls(){
-    const filter=$('clinicFilter');if(!filter)return;
-    const names=[...new Set([...clinics.map(c=>c.name),...patients.map(p=>String(p.clinic||'').trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'es'));
-    filter.innerHTML='<option value="__all__">Todas las clínicas</option>'+names.map(n=>`<option value="${safe(n)}">${safe(n)}</option>`).join('');
-    if(selectedClinic!=='__all__'&&!names.includes(selectedClinic))selectedClinic='__all__';filter.value=selectedClinic;
-    const patientClinic=$('patientClinic');
-    if(patientClinic){const previous=patientClinic.value;patientClinic.innerHTML='<option value="">Selecciona una clínica</option>'+names.map(n=>`<option value="${safe(n)}">${safe(n)}</option>`).join('');if(names.includes(previous))patientClinic.value=previous;else if(selectedClinic!=='__all__'&&names.includes(selectedClinic))patientClinic.value=selectedClinic;}
-  }
-  function renderClinics(){
-    const names=[...new Set([...clinics.map(c=>c.name),...patients.map(p=>String(p.clinic||'').trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'es'));
-    $('clinicCount').textContent=`${names.length} ${names.length===1?'clínica':'clínicas'}`;
-    $('clinicRows').innerHTML=names.length?names.map(n=>{const count=patients.filter(p=>String(p.clinic||'').trim()===n).length;return `<tr><td><span class="clinic-tag">${safe(n)}</span></td><td>${count}</td><td><button class="small-action" data-select-clinic="${safe(n)}" type="button">Ver esta clínica</button></td></tr>`}).join(''):'<tr><td colspan="3" class="empty">Todavía no hay clínicas. Agrega la primera arriba.</td></tr>';
-    document.querySelectorAll('[data-select-clinic]').forEach(b=>b.addEventListener('click',()=>{selectedClinic=b.dataset.selectClinic;renderClinicControls();render();goto('overview');toast('Filtro aplicado: '+selectedClinic)}));
-  }
-  function render(){
-    renderClinicControls();
-    const visiblePatients=filteredPatients(), visiblePayments=filteredPayments();
-    const paid = visiblePatients.filter(p=>Number(p.total||0)-Number(p.paid||0)<=0).length;
-    const collected = visiblePayments.reduce((s,p)=>s+Number(p.amount||0),0);
-    const pending = visiblePatients.reduce((s,p)=>s+Math.max(0,Number(p.total||0)-Number(p.paid||0)),0);
-    $('metricPatients').textContent=visiblePatients.length.toLocaleString('es-MX');$('metricCollected').textContent=money(collected);$('metricPending').textContent=money(pending);$('metricPaid').textContent=paid.toLocaleString('es-MX');
-    const recent=[...visiblePayments].sort((a,b)=>new Date(b.paid_at||b.created_at)-new Date(a.paid_at||a.created_at)).slice(0,7);
-    $('recentRows').innerHTML=recent.length?recent.map(p=>`<tr><td>${safe(p.patient_name||nameFor(p.patient_id))}</td><td><span class="pill">Pago registrado</span></td><td>${safe(date(p.paid_at||p.created_at))}</td><td class="money">${money(p.amount)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Todavía no hay pagos registrados para esta selección.</td></tr>';
-    const term=($('patientSearch')?.value||'').toLowerCase();const list=visiblePatients.filter(p=>[p.name,p.phone,p.clinic,p.policy_number].some(x=>String(x||'').toLowerCase().includes(term)));
-    $('patientRows').innerHTML=list.length?list.map(p=>`<tr><td>${safe(p.name)}</td><td>${safe(p.phone||'—')}</td><td>${safe(p.clinic||'—')}</td><td>${safe(p.policy_number||'—')}</td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td class="money">${money(Math.max(0,Number(p.total||0)-Number(p.paid||0)))}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">No se encontraron pacientes para esta selección.</td></tr>';
-    const pt=($('paymentSearch')?.value||'').toLowerCase();const plist=[...visiblePayments].filter(p=>String(p.patient_name||nameFor(p.patient_id)).toLowerCase().includes(pt)).sort((a,b)=>new Date(b.paid_at||b.created_at)-new Date(a.paid_at||a.created_at));
-    $('paymentRows').innerHTML=plist.length?plist.map(p=>`<tr><td>${safe(p.patient_name||nameFor(p.patient_id))}</td><td>${safe(date(p.paid_at||p.created_at))}</td><td>${safe(p.concept||'Abono')}</td><td class="money">${money(p.amount)}</td><td>${safe(p.reference||'—')}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Todavía no hay pagos registrados para esta selección.</td></tr>';
-    renderClinics();
-  }
-  async function load(){
-    if(!client)return;
-    connection(false,'Actualizando…');
-    const [pr,pa,cr]=await Promise.all([
-      client.from('patients').select('*').order('created_at',{ascending:false}),
-      client.from('payments').select('*').order('paid_at',{ascending:false}),
-      client.from('clinics').select('*').order('name',{ascending:true})
-    ]);
-    if(pr.error||pa.error){connection(false,'Error de conexión');toast('No se pudieron leer los datos. Revisa tablas y permisos.');console.error(pr.error,pa.error);return;}
-    patients=pr.data||[];payments=pa.data||[];
-    clinicTableAvailable=!cr.error;clinics=cr.error?[]:(cr.data||[]);
-    if(cr.error&&!warnedClinicTable){warnedClinicTable=true;toast('Falta crear la tabla de clínicas: ejecuta el SQL incluido en el ZIP.');console.warn('No se pudo leer clinics; ejecuta supabase_schema.sql',cr.error);}
-    render();connection(true,'En línea · tiempo real');
-  }
-  function realtime(){
-    if(channel)client.removeChannel(channel);
-    channel=client.channel('dental-jg-live').on('postgres_changes',{event:'*',schema:'public',table:'patients'},load).on('postgres_changes',{event:'*',schema:'public',table:'payments'},load).on('postgres_changes',{event:'*',schema:'public',table:'clinics'},load).subscribe(status=>{if(status==='SUBSCRIBED')connection(true,'En línea · tiempo real');});
-  }
-  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!configured){$('setupNotice').classList.remove('hidden');msg('Primero configura config.js siguiendo LEEME.txt.');return;}msg('Validando acceso…');client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);const {error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){msg('No se pudo iniciar sesión. Verifica correo y contraseña.');return;}msg('');showApp();await load();realtime();});
-  $('logoutBtn').addEventListener('click',logout);document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>goto(b.dataset.page)));document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>goto(b.dataset.goto)));
-  $('patientSearch').addEventListener('input',render);$('paymentSearch').addEventListener('input',render);$('refreshPatients').addEventListener('click',load);$('refreshPayments').addEventListener('click',load);$('refreshClinics').addEventListener('click',load);
-  $('clinicFilter').addEventListener('change',e=>{selectedClinic=e.target.value;render();});
-  $('patientForm').addEventListener('submit',async e=>{
-    e.preventDefault();if(!client){toast('Inicia sesión antes de registrar pacientes.');return;}
-    const name=$('patientName').value.trim();const clinic=$('patientClinic').value.trim();
-    const total=Number($('patientTotal').value);const installments=Math.max(0,Math.trunc(Number($('patientInstallments').value)||0));const installmentAmount=Number($('patientInstallmentAmount').value)||0;
-    if(!name){toast('Escribe el nombre del paciente.');return;}
-    if(!clinic){toast('Primero registra una clínica y selecciónala.');return;}
-    if(!Number.isFinite(total)||total<0||!Number.isFinite(installmentAmount)||installmentAmount<0){toast('Revisa los importes: no pueden ser negativos.');return;}
-    const form=$('patientForm');const button=form.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Guardando…';
-    const payload={name,phone:$('patientPhone').value.trim(),treatment:$('patientTreatment').value.trim(),clinic,policy_number:$('patientPolicy').value.trim(),total,paid:0,installments,installment_amount:installmentAmount,source_device:'DENTAL JG'};
-    const {data,error}=await client.from('patients').insert(payload).select().single();button.disabled=false;button.textContent='+ Guardar paciente';
-    if(error){console.error('Error al guardar paciente:',error);toast('No se pudo guardar: '+(error.message||'revisa los permisos de patients en Supabase.'));return;}
-    patients.unshift(data);form.reset();$('patientTotal').value='0';$('patientInstallments').value='0';$('patientInstallmentAmount').value='0';render();toast('Paciente registrado correctamente.');
-  });
-  $('clinicForm').addEventListener('submit',async e=>{
-    e.preventDefault();if(!client)return;
-    if(!clinicTableAvailable){toast('Primero ejecuta el archivo supabase_schema.sql en Supabase.');return;}
-    const name=$('clinicName').value.trim();if(!name){toast('Escribe el nombre de la clínica.');return;}
-    const exists=[...clinics.map(c=>c.name),...patients.map(p=>String(p.clinic||'').trim())].some(n=>n.toLocaleLowerCase('es-MX')===name.toLocaleLowerCase('es-MX'));
-    if(exists){toast('Esa clínica ya está registrada.');return;}
-    const button=$('clinicForm').querySelector('button[type="submit"]');button.disabled=true;button.textContent='Guardando…';
-    const {data,error}=await client.from('clinics').insert({name}).select().single();button.disabled=false;button.textContent='+ Agregar clínica';
-    if(error){console.error(error);toast(error.code==='23505'?'Esa clínica ya existe.':'No se pudo guardar. Revisa la tabla y permisos en Supabase.');return;}
-    clinics.push(data);selectedClinic=name;$('clinicName').value='';render();toast('Clínica agregada correctamente.');
-  });
-  if(!configured)$('setupNotice').classList.remove('hidden');
-  $('todayLabel').textContent=new Intl.DateTimeFormat('es-MX',{dateStyle:'medium'}).format(new Date());
+const cfg=window.DENTAL_CONFIG||{}, $=id=>document.getElementById(id);
+const ready=cfg.supabaseUrl&&!cfg.supabaseUrl.includes("PEGA_AQUI")&&cfg.supabaseAnonKey&&!cfg.supabaseAnonKey.includes("PEGA_AQUI");
+let db=null,user=null,role="user",patients=[],payments=[],clinics=[];
+const money=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n)||0);
+const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const date=s=>s?new Intl.DateTimeFormat("es-MX",{dateStyle:"medium",timeStyle:"short"}).format(new Date(s)):"—";
+function note(s){$("notice").textContent=s;$("notice").classList.remove("hidden")}
+function fail(err,where){console.error(where,err);note(where+": "+(err?.message||"No se pudo completar la operación. Revisa permisos y esquema de Supabase."))}
+function showLogin(msg=""){$("loginMsg").textContent=msg}
+function view(name){document.querySelectorAll(".view").forEach(x=>x.classList.add("hidden"));$(name).classList.remove("hidden");document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("active",x.dataset.view===name));$("viewTitle").textContent=({dashboard:"Resumen general",patients:"Registro de clientes",payments:"Cobranza y pagos",receipts:"Recibos",portfolios:"Carteras",managers:"Gestores y accesos",clinics:"Clínicas"})[name]||name}
+async function checkRole(){role="user";const {data,error}=await db.from("app_user_roles").select("*").eq("user_id",user.id).maybeSingle();if(error){console.warn("No se pudo consultar app_user_roles",error);return}if(data){role=String(data.role||data.role_name||data.app_role||"user").toLowerCase()}}
+function canAdmin(){return ["admin","administrator","administrador","owner"].includes(role)}
+async function loadData(){
+$("connection").textContent="● Sincronizando…";
+const [pr,pa,cr]=await Promise.all([db.from("patients").select("*").order("created_at",{ascending:false}),db.from("payments").select("*").order("paid_at",{ascending:false}),db.from("clinics").select("*").order("name")]);
+if(pr.error){fail(pr.error,"No se pudieron leer los pacientes");$("connection").textContent="● Error";return}
+if(pa.error){fail(pa.error,"No se pudieron leer los pagos");$("connection").textContent="● Error";return}
+patients=pr.data||[];payments=pa.data||[];clinics=cr.error?[]:(cr.data||[]);
+render();$("connection").textContent="● Conectado a Supabase";
+}
+function render(){
+$("mPatients").textContent=patients.length.toLocaleString("es-MX");$("mPayments").textContent=payments.length.toLocaleString("es-MX");$("mCollected").textContent=money(payments.reduce((s,p)=>s+Number(p.amount||0),0));$("mPending").textContent=money(patients.reduce((s,p)=>s+Math.max(0,Number(p.total||0)-Number(p.paid||0)),0));
+const name=id=>patients.find(p=>p.id===id)?.name||"Paciente";
+$("recentRows").innerHTML=payments.slice(0,8).map(p=>`<tr><td>${safe(p.patient_name||name(p.patient_id))}</td><td>${safe(date(p.paid_at||p.created_at))}</td><td>${safe(p.concept||"Abono")}</td><td>${money(p.amount)}</td></tr>`).join("")||'<tr><td colspan="4">No hay pagos visibles.</td></tr>';
+const term=($("patientSearch").value||"").toLowerCase();const filtered=patients.filter(p=>[p.name,p.policy_number,p.clinic,p.phone].some(v=>String(v||"").toLowerCase().includes(term)));
+$("patientRows").innerHTML=filtered.map(p=>`<tr><td>${safe(p.name)}</td><td>${safe(p.clinic||"—")}</td><td>${safe(p.policy_number||"—")}</td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td>${money(Math.max(0,Number(p.total||0)-Number(p.paid||0)))}</td></tr>`).join("")||'<tr><td colspan="6">No se encontraron pacientes.</td></tr>';
+$("payPatient").innerHTML='<option value="">Selecciona paciente</option>'+patients.map(p=>`<option value="${safe(p.id)}">${safe(p.name)} · ${safe(p.policy_number||"sin póliza")} · saldo ${money(Math.max(0,Number(p.total||0)-Number(p.paid||0)))}</option>`).join("");
+const pt=($("paymentSearch").value||"").toLowerCase();$("paymentRows").innerHTML=payments.filter(p=>(p.patient_name||name(p.patient_id)).toLowerCase().includes(pt)||String(p.reference||"").toLowerCase().includes(pt)).map(p=>`<tr><td>${safe(p.patient_name||name(p.patient_id))}</td><td>${safe(date(p.paid_at||p.created_at))}</td><td>${safe(p.concept||"Abono")}</td><td>${money(p.amount)}</td><td>${safe(p.reference||"—")}</td></tr>`).join("")||'<tr><td colspan="5">No hay pagos visibles.</td></tr>';
+$("clinicRows").innerHTML=clinics.map(c=>`<tr><td>${safe(c.name)}</td><td>${patients.filter(p=>String(p.clinic||"").trim()===String(c.name||"").trim()).length}</td></tr>`).join("")||'<tr><td colspan="2">No hay clínicas visibles.</td></tr>';
+}
+async function loadReceipts(){
+const {data,error}=await db.from("collection_receipts").select("*").order("created_at",{ascending:false}).limit(300);
+if(error){fail(error,"No se pudieron consultar los recibos");return}
+$("receiptRows").innerHTML=(data||[]).map(r=>`<tr><td>${safe(r.folio||"—")}</td><td>${safe(r.patient_name||"—")}</td><td>${safe(date(r.created_at))}</td><td>${money(r.payment_amount)}</td><td>${safe(r.concept||"—")}</td></tr>`).join("")||'<tr><td colspan="5">No hay recibos visibles.</td></tr>';
+}
+async function loadPortfolios(){
+const {data,error}=await db.from("collection_quincena_cartera").select("*").order("quincena_date",{ascending:false}).limit(500);
+if(error){fail(error,"No se pudieron consultar las carteras");return}
+$("portfolioRows").innerHTML=(data||[]).map(p=>`<tr><td>${safe(p.quincena_date||"—")}</td><td>${safe(p.patient_name||p.titular_name||"—")}</td><td>${safe(p.clinic||"—")}</td><td>${safe(p.policy_number||"—")}</td><td>${money(p.balance_net)}</td><td>${safe(p.manager_id||"—")}</td></tr>`).join("")||'<tr><td colspan="6">No hay carteras visibles.</td></tr>';
+}
+$("loginForm").addEventListener("submit",async e=>{e.preventDefault();if(!ready){showLogin("Falta configurar config.js con la URL y clave pública de Supabase.");return}showLogin("Validando cuenta…");db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){showLogin("No se pudo iniciar sesión. Verifica correo, contraseña y estado de la cuenta.");return}user=data.user;await checkRole();$("login").classList.add("hidden");$("app").classList.remove("hidden");$("userEmail").textContent=user.email||"Usuario";$("userRole").textContent=role;$("today").textContent=new Intl.DateTimeFormat("es-MX",{dateStyle:"medium"}).format(new Date());document.body.classList.toggle("is-admin",canAdmin());document.querySelectorAll(".admin-only").forEach(b=>b.classList.toggle("hidden",!canAdmin()));await loadData();});
+$("logout").addEventListener("click",async()=>{if(db)await db.auth.signOut();location.reload()});
+document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>view(b.dataset.view)));
+$("refresh").addEventListener("click",loadData);$("patientSearch").addEventListener("input",render);$("paymentSearch").addEventListener("input",render);$("loadReceipts").addEventListener("click",loadReceipts);$("loadPortfolios").addEventListener("click",loadPortfolios);
+$("patientForm").addEventListener("submit",async e=>{e.preventDefault();if(!canAdmin()){note("Solo Administración puede registrar clientes desde este panel.");return}const name=$("pName").value.trim(),clinic=$("pClinic").value.trim(),total=Number($("pTotal").value),inst=Math.max(0,Math.trunc(Number($("pInstallments").value)||0)),ia=Math.max(0,Number($("pInstallmentAmount").value)||0);if(!name||!clinic||!Number.isFinite(total)||total<0){$("patientMsg").textContent="Verifica nombre, clínica e importe.";return}
+const payload={name,phone:$("pPhone").value.trim(),treatment:$("pTreatment").value.trim(),clinic,policy_number:$("pPolicy").value.trim(),total,paid:0,installments:inst,installment_amount:ia,source_device:"DENTAL JG PANEL"};
+const {error}=await db.from("patients").insert(payload);if(error){fail(error,"No se pudo guardar el cliente");$("patientMsg").textContent="No guardado";return}$("patientForm").reset();$("pTotal").value="0";$("pInstallments").value="0";$("pInstallmentAmount").value="0";$("patientMsg").textContent="Cliente guardado.";await loadData()});
+$("paymentForm").addEventListener("submit",async e=>{e.preventDefault();if(!canAdmin()){note("El registro directo de pagos desde el panel se limita a Administración. Para gestores, use el flujo autenticado de la app Gestor.");return}const patient=patients.find(p=>p.id===$("payPatient").value),amount=Number($("payAmount").value);if(!patient||!Number.isFinite(amount)||amount<=0){$("paymentMsg").textContent="Selecciona paciente e importe válido.";return}
+const remaining=Math.max(0,Number(patient.total||0)-Number(patient.paid||0));if(amount>remaining+0.005){$("paymentMsg").textContent="El importe supera el saldo actual.";return}
+$("paymentMsg").textContent="Registrando…";
+// Intentionally no blind direct insert: payment/saldo update must be a single verified RPC transaction to prevent duplicate charges.
+const {data,error}=await db.rpc("register_dental_jg_payment",{p_patient_id:patient.id,p_amount:amount,p_concept:$("payConcept").value.trim()||"Abono",p_reference:$("payReference").value.trim()});
+if(error){fail(error,"No se registró el pago. No se hizo un INSERT alternativo para evitar duplicados.");$("paymentMsg").textContent="No registrado: falta o falló el RPC transaccional register_dental_jg_payment.";return}
+$("paymentForm").reset();$("paymentMsg").textContent="Pago registrado.";await loadData()});
+$("clinicForm").addEventListener("submit",async e=>{e.preventDefault();if(!canAdmin()){note("Solo Administración puede administrar clínicas.");return}const name=$("clinicName").value.trim();if(!name)return;if(clinics.some(c=>c.name.toLowerCase()===name.toLowerCase())){note("Esa clínica ya existe.");return}const {error}=await db.from("clinics").insert({name});if(error){fail(error,"No se pudo guardar la clínica");return}$("clinicName").value="";await loadData()});
+if(!ready)showLogin("Configura config.js antes de iniciar sesión.");
 })();

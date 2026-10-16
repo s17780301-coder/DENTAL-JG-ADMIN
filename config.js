@@ -1,6 +1,5 @@
-/* Configuración pública del proyecto Supabase DENTAL JG.
-   No colocar aquí claves secretas ni service_role. */
+// Configuración pública del cliente Supabase. Nunca pegues aquí la service_role key.
 window.DENTAL_CONFIG = {
-  supabaseUrl: 'https://nfwhymppyzoriihdwlyc.supabase.co',
-  supabaseAnonKey: 'sb_publishable_4n5cK2gQeEbTtdYKHAWVVQ_C1Gzl88O'
+  supabaseUrl: "PEGA_AQUI_LA_URL_DE_SUPABASE",
+  supabaseAnonKey: "PEGA_AQUI_LA_CLAVE_PUBLICA_ANON"
 };
