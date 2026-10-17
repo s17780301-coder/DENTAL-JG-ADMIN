@@ -2,337 +2,612 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#073b3a">
-<meta name="description" content="Panel central DENTAL JG">
-<title>DENTAL JG | Panel central</title>
-<link rel="stylesheet" href="styles.css?v=10.8.69">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#073b3a">
+  <meta name="description" content="Panel central DENTAL JG">
+  <title>DENTAL JG | Panel central</title>
+  <link rel="stylesheet" href="styles.css?v=10.8.70">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- =====================================================
+     INICIO DE SESIÓN
+     ===================================================== -->
 <div id="login" class="login-wrap">
-<form id="loginForm" class="login-card">
-<div class="login-logo">
-<img src="logo-dental-jg.png" alt="Logotipo oficial DENTAL JG">
-</div>
-<p class="eyebrow">SISTEMA INTEGRAL</p>
-<h1>DENTAL <span>JG</span></h1>
-<p class="muted">Acceso exclusivo para Registro, Cobranza y Administración.</p>
-<label>Correo de usuario
-<input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com">
-</label>
-<label>Contraseña personal
-<input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña">
-</label>
-<button class="primary" type="submit">Entrar de forma segura</button>
-<p id="loginMsg" role="status" aria-live="polite"></p>
-<small>Las cuentas deben estar activas y tener un rol autorizado en Supabase.</small>
-</form>
+  <form id="loginForm" class="login-card">
+    <div class="login-logo">
+      <img src="logo-dental-jg.png" alt="Logotipo oficial DENTAL JG">
+    </div>
+
+    <p class="eyebrow">SISTEMA INTEGRAL</p>
+    <h1>DENTAL <span>JG</span></h1>
+    <p class="muted">
+      Acceso exclusivo para Registro, Cobranza y Administración.
+    </p>
+
+    <label>Correo de usuario
+      <input
+        id="email"
+        type="email"
+        autocomplete="username"
+        required
+        placeholder="usuario@dentaljg.com">
+    </label>
+
+    <label>Contraseña personal
+      <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        required
+        placeholder="Tu contraseña">
+    </label>
+
+    <button class="primary" type="submit">
+      Entrar de forma segura
+    </button>
+
+    <p id="loginMsg" role="status" aria-live="polite"></p>
+
+    <small>
+      Las cuentas deben estar activas y tener un rol autorizado en Supabase.
+    </small>
+  </form>
 </div>
 
+<!-- =====================================================
+     APLICACIÓN
+     ===================================================== -->
 <div id="app" class="shell hidden">
-<aside class="sidebar">
-<div class="brand">
-<div class="brand-logo">
-<img src="logo-dental-jg.png" alt="Logotipo oficial DENTAL JG">
-</div>
-<div><b>DENTAL JG</b><small>Panel central</small></div>
-</div>
 
-<div class="profile">
-<b id="userEmail">Usuario</b>
-<small id="userRole">Validando permisos…</small>
-</div>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="logo-dental-jg.png" alt="Logotipo oficial DENTAL JG">
+      </div>
+      <div>
+        <b>DENTAL JG</b>
+        <small>Panel central</small>
+      </div>
+    </div>
 
-<nav id="nav" aria-label="Módulos">
-<button data-view="patients" class="nav">
-<span class="nav-icon" aria-hidden="true">
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-<circle cx="9" cy="7" r="3.5"/>
-<path d="M2.5 20v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a3.5 3.5 0 0 1 0 6.8M18 14a5 5 0 0 1 3.5 4.8V20"/>
-</svg>
-</span>
-<span>Registro de clientes</span>
-</button>
+    <div class="profile">
+      <b id="userEmail">Usuario</b>
+      <small id="userRole">Validando permisos…</small>
+    </div>
 
-<button data-view="collection" class="nav">
-<span class="nav-icon" aria-hidden="true">
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-<circle cx="12" cy="12" r="9"/>
-<path d="M15.5 8.5c-.8-.8-1.8-1.2-3.2-1.2-1.7 0-2.8.8-2.8 2s1.1 1.8 2.8 2.2 2.8 1 2.8 2.3-1.2 2.3-3.1 2.3c-1.3 0-2.6-.5-3.5-1.4M12 5.5v13"/>
-</svg>
-</span>
-<span>Cobranza</span>
-</button>
+    <nav id="nav" aria-label="Módulos">
 
-<button data-view="admin" class="nav">
-<span class="nav-icon" aria-hidden="true">
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-<path d="M12 3.2l2 1 2.1-.7 1.8 1.8-.7 2.1.8 2 2 1v2.6l-2 1-.8 2 .7 2.1-1.8 1.8-2.1-.7-2 .8-1 2H9.4l-1-2-2-.8-2.1.7-1.8-1.8.7-2.1-.8-2-2-1v-2.6l2-1 .8-2-.7-2.1 1.8-1.8 2.1.7 2-.8 1-2H13z"/>
-<circle cx="12" cy="12" r="3"/>
-</svg>
-</span>
-<span>Administración</span>
-</button>
-</nav>
+      <button type="button" data-view="home" class="nav active">
+        <span class="nav-icon" aria-hidden="true">⌂</span>
+        <span>Inicio</span>
+      </button>
 
-<div class="side-bottom">
-<div id="connection">● Conectando…</div>
-<button id="logout" class="logout" type="button">Cerrar sesión ↗</button>
-</div>
-</aside>
+      <button type="button" data-view="patients" class="nav">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="7" r="3.5"/>
+            <path d="M2.5 20v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a3.5 3.5 0 0 1 0 6.8M18 14a5 5 0 0 1 3.5 4.8V20"/>
+          </svg>
+        </span>
+        <span>Registro de clientes</span>
+      </button>
 
-<main class="main">
-<header class="topbar">
-<div>
-<p class="eyebrow">DENTAL JG · CONTROL CENTRAL</p>
-<h2 id="viewTitle">Registro de clientes</h2>
-<p class="muted">Módulos autorizados conectados a la misma base de datos.</p>
-</div>
-<div class="top-actions">
-<span id="today"></span>
-<button id="refresh" class="secondary" type="button">Actualizar ↻</button>
-</div>
-</header>
+      <button type="button" data-view="collection" class="nav">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M15.5 8.5c-.8-.8-1.8-1.2-3.2-1.2-1.7 0-2.8.8-2.8 2s1.1 1.8 2.8 2.2 2.8 1 2.8 2.3-1.2 2.3-3.1 2.3c-1.3 0-2.6-.5-3.5-1.4M12 5.5v13"/>
+          </svg>
+        </span>
+        <span>Cobranza</span>
+      </button>
 
-<div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
+      <button type="button" data-view="admin" class="nav">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3.2l2 1 2.1-.7 1.8 1.8-.7 2.1.8 2 2 1v2.6l-2 1-.8 2 .7 2.1-1.8 1.8-2.1-.7-2 .8-1 2H9.4l-1-2-2-.8-2.1.7-1.8-1.8.7-2.1-.8-2-2-1v-2.6l2-1 .8-2-.7-2.1 1.8-1.8 2.1.7 2-.8 1-2H13z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
+        <span>Administración</span>
+      </button>
+    </nav>
 
-<section id="patients" class="view hidden">
-<div class="panel">
-<div class="section-head">
-<div>
-<h3>Registrar cliente</h3>
-<p>Registro de clientes es la fuente oficial del nombre y número de póliza.</p>
-</div>
-</div>
+    <div class="side-bottom">
+      <div id="connection">● Conectando…</div>
+      <button id="logout" class="logout" type="button">
+        Cerrar sesión ↗
+      </button>
+    </div>
+  </aside>
 
-<form id="patientForm" class="form-grid">
-<label>Nombre completo *
-<input id="pName" required maxlength="160">
-</label>
-<label>Teléfono principal *
-<input id="pPhone" required maxlength="40" inputmode="tel">
-</label>
-<label>Teléfono secundario
-<input id="pPhone2" maxlength="40" inputmode="tel">
-</label>
-<label>Tratamiento *
-<select id="pTreatment" required>
-<option value="">Selecciona tratamiento</option>
-<option>Básico</option>
-<option>Orto</option>
-<option>VIP</option>
-<option>Damon</option>
-</select>
-</label>
-<label>Clínica *
-<select id="pClinic" required>
-<option value="">Selecciona clínica</option>
-</select>
-</label>
-<label>Número de póliza *
-<input id="pPolicy" required maxlength="100">
-</label>
-<label>Importe total (MXN) *
-<input id="pTotal" type="number" min="0" step=".01" required>
-</label>
-<label>Número de pagos *
-<input id="pInstallments" type="number" min="1" step="1" required>
-</label>
-<label>Importe por pago (MXN) *
-<input id="pInstallmentAmount" type="number" min="0" step=".01" required>
-</label>
-<label>Dirección
-<input id="pAddress" maxlength="240">
-</label>
-<label class="full">Observaciones
-<textarea id="pObservations" rows="2" maxlength="500"></textarea>
-</label>
-<div class="form-actions">
-<button class="primary" type="submit">Guardar cliente</button>
-<span id="patientMsg" class="muted"></span>
-</div>
-</form>
-</div>
+  <main class="main">
 
-<div class="panel">
-<div class="section-head">
-<div>
-<h3>Directorio de clientes</h3>
-<p>Los datos se consultan desde Supabase.</p>
-</div>
-<input id="patientSearch" placeholder="Buscar nombre o póliza…" aria-label="Buscar clientes">
-</div>
-<div class="table-scroll">
-<table>
-<thead>
-<tr>
-<th>Cliente</th>
-<th>Clínica</th>
-<th>Póliza</th>
-<th>Tratamiento</th>
-<th>Total</th>
-<th>Pagado</th>
-<th>Saldo</th>
-</tr>
-</thead>
-<tbody id="patientRows">
-<tr><td colspan="7">Inicia sesión para consultar.</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
+    <!-- ENCABEZADO -->
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">DENTAL JG · CONTROL CENTRAL</p>
+        <h2 id="viewTitle">Inicio</h2>
+        <p class="muted">
+          Acceso centralizado a los módulos autorizados.
+        </p>
+      </div>
 
-<section id="collection" class="view hidden">
-<div class="subnav" role="tablist" aria-label="Secciones de Cobranza">
-<button type="button" class="subtab active" data-panel="paymentsPanel">Pagos</button>
-<button type="button" class="subtab" data-panel="portfoliosPanel">Carteras</button>
-<button type="button" class="subtab" data-panel="receiptsPanel">Recibos</button>
-</div>
+      <div class="top-actions">
+        <span id="today"></span>
+        <button id="refresh" class="secondary" type="button">
+          Actualizar ↻
+        </button>
+      </div>
+    </header>
 
-<div id="paymentsPanel" class="collection-panel">
-<div class="panel">
-<div class="section-head">
-<div>
-<h3>Registrar cobranza</h3>
-<p>El pago se registra mediante una función transaccional segura de Supabase.</p>
-</div>
-</div>
-<form id="paymentForm" class="form-grid">
-<label>Cliente *
-<select id="payPatient" required>
-<option value="">Selecciona cliente</option>
-</select>
-</label>
-<label>Importe recibido (MXN) *
-<input id="payAmount" type="number" min=".01" step=".01" required>
-</label>
-<label>Concepto
-<input id="payConcept" maxlength="120" value="Abono">
-</label>
-<label>Referencia / nota
-<input id="payReference" maxlength="160">
-</label>
-<div class="form-actions">
-<button class="primary" type="submit">Registrar pago</button>
-<span id="paymentMsg" class="muted"></span>
-</div>
-</form>
-</div>
+    <div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
 
-<div class="panel">
-<div class="section-head">
-<div><h3>Historial de pagos</h3></div>
-<input id="paymentSearch" placeholder="Buscar movimiento…" aria-label="Buscar pagos">
-</div>
-<div class="table-scroll">
-<table>
-<thead>
-<tr>
-<th>Cliente</th><th>Fecha</th><th>Concepto</th><th>Importe</th><th>Referencia</th>
-</tr>
-</thead>
-<tbody id="paymentRows"></tbody>
-</table>
-</div>
-</div>
-</div>
+    <!-- =================================================
+         PORTADA CON TRES TARJETAS
+         ================================================= -->
+    <section id="home" class="view">
 
-<div id="portfoliosPanel" class="collection-panel hidden">
-<div class="panel">
-<div class="section-head">
-<div>
-<h3>Carteras quincenales</h3>
-<p>Consulta carteras existentes, pólizas y gestor asignado.</p>
-</div>
-<button id="loadPortfolios" class="secondary" type="button">Cargar carteras</button>
-</div>
-<div class="table-scroll">
-<table>
-<thead>
-<tr>
-<th>Quincena</th><th>Cliente</th><th>Clínica</th><th>Póliza</th><th>Saldo</th><th>Gestor asignado</th>
-</tr>
-</thead>
-<tbody id="portfolioRows">
-<tr><td colspan="6">Pulsa “Cargar carteras”.</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
+      <div class="portal-intro">
+        <p class="eyebrow">BIENVENIDO AL SISTEMA</p>
+        <h2>Todo DENTAL JG en un solo lugar</h2>
+        <p>
+          Selecciona el módulo que necesitas. El acceso está sujeto
+          a tu sesión y a los permisos asignados a tu cuenta.
+        </p>
+      </div>
 
-<div id="receiptsPanel" class="collection-panel hidden">
-<div class="panel">
-<div class="section-head">
-<div>
-<h3>Recibos emitidos</h3>
-<p>Consulta recibos existentes sin generar folios duplicados.</p>
-</div>
-<button id="loadReceipts" class="secondary" type="button">Cargar recibos</button>
-</div>
-<div class="table-scroll">
-<table>
-<thead>
-<tr>
-<th>Folio</th><th>Cliente</th><th>Fecha</th><th>Importe</th><th>Concepto</th>
-</tr>
-</thead>
-<tbody id="receiptRows">
-<tr><td colspan="5">Pulsa “Cargar recibos”.</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</section>
+      <div class="portal-grid">
 
-<section id="admin" class="view hidden">
-<div class="panel">
-<div class="section-head">
-<div>
-<h3>Administración</h3>
-<p>Configuración de clínicas y revisión de roles autorizados.</p>
-</div>
-</div>
+        <button type="button" class="portal-card" data-open-view="patients">
+          <span class="portal-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="7" r="3.5"/>
+              <path d="M2.5 20v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a3.5 3.5 0 0 1 0 6.8M18 14a5 5 0 0 1 3.5 4.8V20"/>
+            </svg>
+          </span>
+          <h3>Registro de clientes</h3>
+          <p>
+            Consulta el directorio y administra los datos de los clientes
+            y sus pólizas.
+          </p>
+          <span class="portal-card-action">
+            Abrir módulo <span aria-hidden="true">→</span>
+          </span>
+        </button>
 
-<div class="admin-grid">
-<div>
-<h4>Clínicas</h4>
-<form id="clinicForm" class="inline-form">
-<label>Nombre de clínica *
-<input id="clinicName" required maxlength="100">
-</label>
-<button class="primary" type="submit">Agregar clínica</button>
-</form>
-<div class="table-scroll">
-<table>
-<thead><tr><th>Clínica</th><th>Clientes</th></tr></thead>
-<tbody id="clinicRows"></tbody>
-</table>
-</div>
-</div>
+        <button type="button" class="portal-card" data-open-view="collection">
+          <span class="portal-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M15.5 8.5c-.8-.8-1.8-1.2-3.2-1.2-1.7 0-2.8.8-2.8 2s1.1 1.8 2.8 2.2 2.8 1 2.8 2.3-1.2 2.3-3.1 2.3c-1.3 0-2.6-.5-3.5-1.4M12 5.5v13"/>
+            </svg>
+          </span>
+          <h3>Cobranza</h3>
+          <p>
+            Accede al registro de pagos, las carteras quincenales
+            y los recibos existentes.
+          </p>
+          <span class="portal-card-action">
+            Abrir módulo <span aria-hidden="true">→</span>
+          </span>
+        </button>
 
-<div>
-<h4>Accesos</h4>
-<p class="muted">Solo se permite entrar al panel con los roles Administración, Cobranza o Registro. Los gestores utilizan su aplicación y no pueden entrar aquí.</p>
-<div id="roleInfo" class="notice">Los permisos se verifican al iniciar sesión.</div>
-<p class="warning">La seguridad definitiva depende de las políticas RLS y permisos de Supabase; ocultar módulos en pantalla no sustituye esas políticas.</p>
-</div>
-</div>
-</div>
-</section>
+        <button type="button" class="portal-card" data-open-view="admin">
+          <span class="portal-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-2.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6.3v-2.6h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v2.6h-.2a1.7 1.7 0 0 0-1.5 1z"/>
+            </svg>
+          </span>
+          <h3>Administración</h3>
+          <p>
+            Gestiona la configuración de clínicas y revisa
+            los accesos autorizados.
+          </p>
+          <span class="portal-card-action">
+            Abrir módulo <span aria-hidden="true">→</span>
+          </span>
+        </button>
 
-<footer>DENTAL JG · Panel central <span>Registro · Cobranza · Administración</span></footer>
-</main>
+      </div>
+
+      <div class="portal-status">
+        <span class="portal-status-dot" aria-hidden="true"></span>
+        <span>
+          Sesión protegida. Los módulos disponibles dependen de tu rol.
+        </span>
+      </div>
+    </section>
+
+    <!-- =================================================
+         REGISTRO DE CLIENTES
+         ================================================= -->
+    <section id="patients" class="view hidden">
+
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h3>Registrar cliente</h3>
+            <p>
+              Registro de clientes es la fuente oficial del nombre
+              y número de póliza.
+            </p>
+          </div>
+        </div>
+
+        <form id="patientForm" class="form-grid">
+          <label>Nombre completo *
+            <input id="pName" required maxlength="160">
+          </label>
+
+          <label>Teléfono principal *
+            <input id="pPhone" required maxlength="40" inputmode="tel">
+          </label>
+
+          <label>Teléfono secundario
+            <input id="pPhone2" maxlength="40" inputmode="tel">
+          </label>
+
+          <label>Tratamiento *
+            <select id="pTreatment" required>
+              <option value="">Selecciona tratamiento</option>
+              <option>Básico</option>
+              <option>Orto</option>
+              <option>VIP</option>
+              <option>Damon</option>
+            </select>
+          </label>
+
+          <label>Clínica *
+            <select id="pClinic" required>
+              <option value="">Selecciona clínica</option>
+            </select>
+          </label>
+
+          <label>Número de póliza *
+            <input id="pPolicy" required maxlength="100">
+          </label>
+
+          <label>Importe total (MXN) *
+            <input id="pTotal" type="number" min="0" step=".01" required>
+          </label>
+
+          <label>Número de pagos *
+            <input id="pInstallments" type="number" min="1" step="1" required>
+          </label>
+
+          <label>Importe por pago (MXN) *
+            <input id="pInstallmentAmount" type="number" min="0" step=".01" required>
+          </label>
+
+          <label>Dirección
+            <input id="pAddress" maxlength="240">
+          </label>
+
+          <label class="full">Observaciones
+            <textarea id="pObservations" rows="2" maxlength="500"></textarea>
+          </label>
+
+          <div class="form-actions">
+            <button class="primary" type="submit">Guardar cliente</button>
+            <span id="patientMsg" class="muted"></span>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h3>Directorio de clientes</h3>
+            <p>Los datos se consultan desde Supabase.</p>
+          </div>
+          <input id="patientSearch" placeholder="Buscar nombre o póliza…"
+                 aria-label="Buscar clientes">
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Clínica</th>
+                <th>Póliza</th>
+                <th>Tratamiento</th>
+                <th>Total</th>
+                <th>Pagado</th>
+                <th>Saldo</th>
+              </tr>
+            </thead>
+            <tbody id="patientRows">
+              <tr><td colspan="7">Inicia sesión para consultar.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================
+         COBRANZA
+         ================================================= -->
+    <section id="collection" class="view hidden">
+
+      <div class="subnav" role="tablist" aria-label="Secciones de Cobranza">
+        <button type="button" class="subtab active" data-panel="paymentsPanel">
+          Pagos
+        </button>
+        <button type="button" class="subtab" data-panel="portfoliosPanel">
+          Carteras
+        </button>
+        <button type="button" class="subtab" data-panel="receiptsPanel">
+          Recibos
+        </button>
+      </div>
+
+      <div id="paymentsPanel" class="collection-panel">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>Registrar cobranza</h3>
+              <p>
+                El pago se registra mediante una función transaccional
+                segura de Supabase.
+              </p>
+            </div>
+          </div>
+
+          <form id="paymentForm" class="form-grid">
+            <label>Cliente *
+              <select id="payPatient" required>
+                <option value="">Selecciona cliente</option>
+              </select>
+            </label>
+
+            <label>Importe recibido (MXN) *
+              <input id="payAmount" type="number" min=".01" step=".01" required>
+            </label>
+
+            <label>Concepto
+              <input id="payConcept" maxlength="120" value="Abono">
+            </label>
+
+            <label>Referencia / nota
+              <input id="payReference" maxlength="160">
+            </label>
+
+            <div class="form-actions">
+              <button class="primary" type="submit">Registrar pago</button>
+              <span id="paymentMsg" class="muted"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <div><h3>Historial de pagos</h3></div>
+            <input id="paymentSearch" placeholder="Buscar movimiento…"
+                   aria-label="Buscar pagos">
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Concepto</th>
+                  <th>Importe</th>
+                  <th>Referencia</th>
+                </tr>
+              </thead>
+              <tbody id="paymentRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="portfoliosPanel" class="collection-panel hidden">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>Carteras quincenales</h3>
+              <p>Consulta carteras existentes, pólizas y gestor asignado.</p>
+            </div>
+            <button id="loadPortfolios" class="secondary" type="button">
+              Cargar carteras
+            </button>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Quincena</th>
+                  <th>Cliente</th>
+                  <th>Clínica</th>
+                  <th>Póliza</th>
+                  <th>Saldo</th>
+                  <th>Gestor asignado</th>
+                </tr>
+              </thead>
+              <tbody id="portfolioRows">
+                <tr><td colspan="6">Pulsa “Cargar carteras”.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="receiptsPanel" class="collection-panel hidden">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h3>Recibos emitidos</h3>
+              <p>Consulta recibos existentes sin generar folios duplicados.</p>
+            </div>
+            <button id="loadReceipts" class="secondary" type="button">
+              Cargar recibos
+            </button>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Importe</th>
+                  <th>Concepto</th>
+                </tr>
+              </thead>
+              <tbody id="receiptRows">
+                <tr><td colspan="5">Pulsa “Cargar recibos”.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================
+         ADMINISTRACIÓN
+         ================================================= -->
+    <section id="admin" class="view hidden">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h3>Administración</h3>
+            <p>Configuración de clínicas y revisión de roles autorizados.</p>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+          <div>
+            <h4>Clínicas</h4>
+
+            <form id="clinicForm" class="inline-form">
+              <label>Nombre de clínica *
+                <input id="clinicName" required maxlength="100">
+              </label>
+              <button class="primary" type="submit">Agregar clínica</button>
+            </form>
+
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Clínica</th><th>Clientes</th></tr>
+                </thead>
+                <tbody id="clinicRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h4>Accesos</h4>
+            <p class="muted">
+              Solo se permite entrar al panel con los roles Administración,
+              Cobranza o Registro. Los gestores utilizan su aplicación
+              y no pueden entrar aquí.
+            </p>
+
+            <div id="roleInfo" class="notice">
+              Los permisos se verifican al iniciar sesión.
+            </div>
+
+            <p class="warning">
+              La seguridad definitiva depende de las políticas RLS y
+              permisos de Supabase; ocultar módulos en pantalla no
+              sustituye esas políticas.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      DENTAL JG · Panel central
+      <span>Registro · Cobranza · Administración</span>
+    </footer>
+  </main>
 </div>
 
 <!-- Archivos principales: conservar este orden -->
-<script src="config.js?v=10.8.69"></script>
-<script src="app.js?v=10.8.69"></script>
+<script src="config.js?v=10.8.70"></script>
+<script src="app.js?v=10.8.70"></script>
 <script src="users.js?v=7"></script>
 
-</body>
-</html>
+<!-- Navegación visual de portada.
+     La validación real de permisos debe seguir en app.js. -->
+<script>
+(function () {
+  "use strict";
+
+  function openView(viewName) {
+    const target = document.getElementById(viewName);
+    const app = document.getElementById("app");
+
+    if (!target || !app || app.classList.contains("hidden")) {
+      return;
+    }
+
+    const allowedViews = ["home", "patients", "collection", "admin"];
+    if (!allowedViews.includes(viewName)) {
+      return;
+    }
+
+    document.querySelectorAll("#app .view").forEach(function (view) {
+      view.classList.toggle("hidden", view.id !== viewName);
+    });
+
+    document.querySelectorAll("#nav [data-view]").forEach(function (button) {
+      button.classList.toggle(
+        "active",
+        button.getAttribute("data-view") === viewName
+      );
+    });
+
+    const titles = {
+      home: "Inicio",
+      patients: "Registro de clientes",
+      collection: "Cobranza",
+      admin: "Administración"
+    };
+
+    const title = document.getElementById("viewTitle");
+    if (title) {
+      title.textContent = titles[viewName] || "DENTAL JG";
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.querySelectorAll("[data-open-view]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      openView(button.getAttribute("data-open-view"));
+    });
+  });
+
+  document.querySelectorAll("#nav [data-view]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      openView(button.getAttribute("data-view"));
+    });
+  });
+
+  window.dentalJgOpenView = openView;
+})(
