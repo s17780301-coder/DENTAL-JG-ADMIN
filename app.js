@@ -14,43 +14,49 @@ const ready = Boolean(
 
 let db = null;
 let user = null;
-let role = "";
+let role = "user";
 let patients = [];
 let payments = [];
 let clinics = [];
 
-const money = n => new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN"
-}).format(Number(n) || 0);
+const money = n =>
+  new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN"
+  }).format(Number(n) || 0);
 
-const safe = s => String(s ?? "").replace(/[&<>"']/g, c => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;",
-  '"': "&quot;", "'": "&#39;"
-}[c]));
+const safe = s =>
+  String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
 
 const date = s => {
   if (!s) return "—";
   const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? "—" :
-    new Intl.DateTimeFormat("es-MX", {
-      dateStyle: "medium",
-      timeStyle: "short"
-    }).format(d);
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : new Intl.DateTimeFormat("es-MX", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(d);
 };
 
-function note(message) {
-  $("notice").textContent = message;
+function note(s) {
+  $("notice").textContent = s;
   $("notice").classList.remove("hidden");
 }
 
-function fail(error, where) {
-  console.error(where, error);
-  note(where + ": " + (error?.message || "Revisa Supabase."));
+function fail(err, where) {
+  console.error(where, err);
+  note(where + ": " + (err?.message || "Revisa permisos y esquema de Supabase."));
 }
 
-function showLogin(message = "") {
-  $("loginMsg").textContent = message;
+function showLogin(msg = "") {
+  $("loginMsg").textContent = msg;
 }
 
 const roleMap = {
@@ -76,7 +82,8 @@ async function checkRole() {
 
   if (error) {
     throw new Error(
-      "No se pudieron verificar los permisos: " + error.message
+      "No se pudieron verificar los permisos en app_user_roles: " +
+      error.message
     );
   }
 
@@ -88,7 +95,7 @@ async function checkRole() {
 
   if (!role) {
     throw new Error(
-      "La cuenta no tiene un rol autorizado: Administración, Cobranza o Registro."
+      "La cuenta no tiene un rol autorizado (Administración, Cobranza o Registro)."
     );
   }
 }
@@ -100,11 +107,9 @@ function allowed(viewName) {
 }
 
 function setNavigation() {
-  document.querySelectorAll(".nav").forEach(button => {
-    button.classList.toggle(
-      "hidden",
-      !allowed(button.dataset.view)
-    );
+  document.querySelectorAll(".nav").forEach(b => {
+    const ok = allowed(b.dataset.view);
+    b.classList.toggle("hidden", !ok);
   });
 
   $("userRole").textContent = ({
@@ -115,7 +120,7 @@ function setNavigation() {
 
   $("roleInfo").textContent =
     "Sesión autorizada: " + $("userRole").textContent +
-    ". Supabase debe aplicar también los permisos RLS.";
+    ". Los permisos de datos también deben estar configurados en Supabase.";
 }
 
 function view(name) {
@@ -124,14 +129,20 @@ function view(name) {
     return;
   }
 
-  document.querySelectorAll(".view").forEach(section =>
-    section.classList.add("hidden")
+  document.querySelectorAll(".view").forEach(x =>
+    x.classList.add("hidden")
   );
 
-  $(name).classList.remove("hidden");
+  const target = $(name);
+  if (!target) {
+    note("No se encontró el módulo solicitado: " + name);
+    return;
+  }
 
-  document.querySelectorAll(".nav").forEach(button =>
-    button.classList.toggle("active", button.dataset.view === name)
+  target.classList.remove("hidden");
+
+  document.querySelectorAll(".nav").forEach(x =>
+    x.classList.toggle("active", x.dataset.view === name)
   );
 
   $("viewTitle").textContent = ({
@@ -144,12 +155,12 @@ function view(name) {
 }
 
 function setCollectionPanel(panel) {
-  document.querySelectorAll(".collection-panel").forEach(section =>
-    section.classList.toggle("hidden", section.id !== panel)
+  document.querySelectorAll(".collection-panel").forEach(x =>
+    x.classList.toggle("hidden", x.id !== panel)
   );
 
-  document.querySelectorAll(".subtab").forEach(button =>
-    button.classList.toggle("active", button.dataset.panel === panel)
+  document.querySelectorAll(".subtab").forEach(x =>
+    x.classList.toggle("active", x.dataset.panel === panel)
   );
 
   if (panel === "receiptsPanel") loadReceipts();
@@ -159,72 +170,66 @@ function setCollectionPanel(panel) {
 async function loadData() {
   $("connection").textContent = "● Sincronizando…";
 
-  try {
-    const tasks = [
-      db.from("patients")
+  const tasks = [
+    db.from("patients")
+      .select("*")
+      .order("created_at", { ascending: false })
+  ];
+
+  if (role === "admin" || role === "cobranza") {
+    tasks.push(
+      db.from("payments")
         .select("*")
-        .order("created_at", { ascending: false })
-    ];
-
-    if (role === "admin" || role === "cobranza") {
-      tasks.push(
-        db.from("payments")
-          .select("*")
-          .order("paid_at", { ascending: false })
-      );
-    }
-
-    // Registro también necesita leer las clínicas para el formulario.
-    if (role === "admin" || role === "registro") {
-      tasks.push(
-        db.from("clinics")
-          .select("*")
-          .order("name")
-      );
-    }
-
-    const results = await Promise.all(tasks);
-
-    if (results[0].error) {
-      throw new Error(
-        "No se pudieron leer los clientes: " + results[0].error.message
-      );
-    }
-
-    patients = results[0].data || [];
-    let idx = 1;
-
-    if (role === "admin" || role === "cobranza") {
-      if (results[idx].error) {
-        payments = [];
-        fail(results[idx].error, "No se pudieron leer los pagos");
-      } else {
-        payments = results[idx].data || [];
-      }
-      idx++;
-    } else {
-      payments = [];
-    }
-
-    if (role === "admin" || role === "registro") {
-      if (results[idx].error) {
-        clinics = [];
-        fail(results[idx].error, "No se pudieron leer las clínicas");
-      } else {
-        clinics = results[idx].data || [];
-      }
-    } else {
-      clinics = [];
-    }
-
-    render();
-    populateClinics();
-
-    $("connection").textContent = "● Conectado a Supabase";
-  } catch (error) {
-    $("connection").textContent = "● Error";
-    fail(error, "No se pudieron cargar los datos");
+        .order("paid_at", { ascending: false })
+    );
   }
+
+  if (role === "admin") {
+    tasks.push(
+      db.from("clinics")
+        .select("*")
+        .order("name")
+    );
+  }
+
+  const results = await Promise.all(tasks);
+
+  if (results[0].error) {
+    fail(results[0].error, "No se pudieron leer los clientes");
+    $("connection").textContent = "● Error";
+    return;
+  }
+
+  patients = results[0].data || [];
+
+  let idx = 1;
+
+  if (role === "admin" || role === "cobranza") {
+    if (results[idx].error) {
+      fail(results[idx].error, "No se pudieron leer los pagos");
+      payments = [];
+    } else {
+      payments = results[idx].data || [];
+    }
+    idx++;
+  } else {
+    payments = [];
+  }
+
+  if (role === "admin") {
+    if (results[idx].error) {
+      fail(results[idx].error, "No se pudieron leer las clínicas");
+      clinics = [];
+    } else {
+      clinics = results[idx].data || [];
+    }
+  } else {
+    clinics = [];
+  }
+
+  render();
+  populateClinics();
+  $("connection").textContent = "● Conectado a Supabase";
 }
 
 function render() {
@@ -245,37 +250,36 @@ function render() {
       <td>${money(p.paid)}</td>
       <td>${money(Math.max(0, Number(p.total || 0) - Number(p.paid || 0)))}</td>
     </tr>
-  `).join("") ||
-    '<tr><td colspan="7">No se encontraron clientes.</td></tr>';
+  `).join("") || '<tr><td colspan="7">No se encontraron clientes.</td></tr>';
 
   $("payPatient").innerHTML =
     '<option value="">Selecciona cliente</option>' +
     patients.map(p => `
       <option value="${safe(p.id)}">
-        ${safe(p.name)} · póliza ${safe(p.policy_number || "—")}
-        · saldo ${money(Math.max(0, Number(p.total || 0) - Number(p.paid || 0)))}
+        ${safe(p.name)} · póliza ${safe(p.policy_number || "—")} · saldo
+        ${money(Math.max(0, Number(p.total || 0) - Number(p.paid || 0)))}
       </option>
     `).join("");
 
-  const patientName = id =>
+  const name = id =>
     patients.find(p => String(p.id) === String(id))?.name || "Cliente";
 
-  const paymentTerm = ($("paymentSearch").value || "").toLowerCase();
+  const pterm = ($("paymentSearch").value || "").toLowerCase();
 
-  $("paymentRows").innerHTML = payments.filter(p =>
-    String(p.patient_name || patientName(p.patient_id)).toLowerCase()
-      .includes(paymentTerm) ||
-    String(p.reference || "").toLowerCase().includes(paymentTerm)
-  ).map(p => `
-    <tr>
-      <td>${safe(p.patient_name || patientName(p.patient_id))}</td>
-      <td>${safe(date(p.paid_at || p.created_at))}</td>
-      <td>${safe(p.concept || "Abono")}</td>
-      <td>${money(p.amount)}</td>
-      <td>${safe(p.reference || "—")}</td>
-    </tr>
-  `).join("") ||
-    '<tr><td colspan="5">No hay pagos visibles.</td></tr>';
+  $("paymentRows").innerHTML = payments
+    .filter(p =>
+      (p.patient_name || name(p.patient_id)).toLowerCase().includes(pterm) ||
+      String(p.reference || "").toLowerCase().includes(pterm)
+    )
+    .map(p => `
+      <tr>
+        <td>${safe(p.patient_name || name(p.patient_id))}</td>
+        <td>${safe(date(p.paid_at || p.created_at))}</td>
+        <td>${safe(p.concept || "Abono")}</td>
+        <td>${money(p.amount)}</td>
+        <td>${safe(p.reference || "—")}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="5">No hay pagos visibles.</td></tr>';
 
   $("clinicRows").innerHTML = clinics.map(c => `
     <tr>
@@ -284,22 +288,20 @@ function render() {
         String(p.clinic || "").trim() === String(c.name || "").trim()
       ).length}</td>
     </tr>
-  `).join("") ||
-    '<tr><td colspan="2">No hay clínicas visibles.</td></tr>';
+  `).join("") || '<tr><td colspan="2">No hay clínicas visibles.</td></tr>';
 }
 
 function populateClinics() {
-  const select = $("pClinic");
-  const current = select.value;
+  const current = $("pClinic").value;
 
-  select.innerHTML =
+  $("pClinic").innerHTML =
     '<option value="">Selecciona clínica</option>' +
     clinics.map(c =>
       `<option value="${safe(c.name)}">${safe(c.name)}</option>`
     ).join("");
 
   if (current && clinics.some(c => c.name === current)) {
-    select.value = current;
+    $("pClinic").value = current;
   }
 }
 
@@ -330,8 +332,7 @@ async function loadReceipts() {
       <td>${money(r.payment_amount)}</td>
       <td>${safe(r.concept || "—")}</td>
     </tr>
-  `).join("") ||
-    '<tr><td colspan="5">No hay recibos visibles.</td></tr>';
+  `).join("") || '<tr><td colspan="5">No hay recibos visibles.</td></tr>';
 }
 
 async function loadPortfolios() {
@@ -362,8 +363,7 @@ async function loadPortfolios() {
       <td>${money(p.balance_net)}</td>
       <td>${safe(p.manager_id || "—")}</td>
     </tr>
-  `).join("") ||
-    '<tr><td colspan="6">No hay carteras visibles.</td></tr>';
+  `).join("") || '<tr><td colspan="6">No hay carteras visibles.</td></tr>';
 }
 
 $("loginForm").addEventListener("submit", async e => {
@@ -374,12 +374,14 @@ $("loginForm").addEventListener("submit", async e => {
     return;
   }
 
-  const button = $("loginForm").querySelector("button");
-  button.disabled = true;
   showLogin("Validando cuenta y permisos…");
+  $("loginForm").querySelector("button").disabled = true;
 
   try {
-    db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    db = window.supabase.createClient(
+      cfg.supabaseUrl,
+      cfg.supabaseAnonKey
+    );
 
     const { data, error } = await db.auth.signInWithPassword({
       email: $("email").value.trim(),
@@ -387,7 +389,9 @@ $("loginForm").addEventListener("submit", async e => {
     });
 
     if (error) {
-      throw new Error("No se pudo iniciar sesión. Verifica correo y contraseña.");
+      throw new Error(
+        "No se pudo iniciar sesión. Verifica correo, contraseña y estado de la cuenta."
+      );
     }
 
     user = data.user;
@@ -401,18 +405,25 @@ $("loginForm").addEventListener("submit", async e => {
     }).format(new Date());
 
     setNavigation();
+
+    // Avisar al módulo de usuarios cuando la sesión esté lista.
+    document.dispatchEvent(new CustomEvent("dentaljg:session-ready", {
+      detail: { userId: user.id, role }
+    }));
+
     await loadData();
 
-    view(role === "registro" ? "patients" :
-         role === "cobranza" ? "collection" : "admin");
+    const first =
+      role === "registro" ? "patients" :
+      role === "cobranza" ? "collection" :
+      "admin";
 
-    if (role === "cobranza") setCollectionPanel("paymentsPanel");
-  } catch (error) {
-    showLogin(error.message || "Acceso denegado.");
+    view(first);
+  } catch (err) {
+    showLogin(err.message || "Acceso denegado.");
     if (db) await db.auth.signOut().catch(() => {});
-    role = "";
   } finally {
-    button.disabled = false;
+    $("loginForm").querySelector("button").disabled = false;
   }
 });
 
@@ -421,12 +432,12 @@ $("logout").addEventListener("click", async () => {
   location.reload();
 });
 
-document.querySelectorAll(".nav").forEach(button =>
-  button.addEventListener("click", () => view(button.dataset.view))
+document.querySelectorAll(".nav").forEach(b =>
+  b.addEventListener("click", () => view(b.dataset.view))
 );
 
-document.querySelectorAll(".subtab").forEach(button =>
-  button.addEventListener("click", () => setCollectionPanel(button.dataset.panel))
+document.querySelectorAll(".subtab").forEach(b =>
+  b.addEventListener("click", () => setCollectionPanel(b.dataset.panel))
 );
 
 $("refresh").addEventListener("click", loadData);
@@ -439,7 +450,7 @@ $("patientForm").addEventListener("submit", async e => {
   e.preventDefault();
 
   if (role !== "admin" && role !== "registro") {
-    note("Solo Registro o Administración puede dar de alta clientes.");
+    note("Solo Registro de clientes o Administración puede dar de alta clientes.");
     return;
   }
 
@@ -447,24 +458,24 @@ $("patientForm").addEventListener("submit", async e => {
   const clinic = $("pClinic").value.trim();
   const policy = $("pPolicy").value.trim();
   const total = Number($("pTotal").value);
-  const installments = Number($("pInstallments").value);
-  const installmentAmount = Number($("pInstallmentAmount").value);
+  const inst = Math.trunc(Number($("pInstallments").value));
+  const ia = Number($("pInstallmentAmount").value);
 
-  if (!name || !clinic || !policy ||
-      !Number.isFinite(total) || total < 0 ||
-      !Number.isInteger(installments) || installments < 1 ||
-      !Number.isFinite(installmentAmount) || installmentAmount < 0) {
+  if (
+    !name || !clinic || !policy ||
+    !Number.isFinite(total) || total < 0 ||
+    !Number.isInteger(inst) || inst < 1 ||
+    !Number.isFinite(ia) || ia < 0
+  ) {
     $("patientMsg").textContent = "Verifica los campos obligatorios.";
     return;
   }
 
-  // Evita duplicados entre los registros que esta cuenta puede consultar.
-  // La unicidad global debe protegerse también con una restricción en SQL.
   if (patients.some(p =>
     String(p.policy_number || "").trim().toLowerCase() === policy.toLowerCase()
   )) {
     $("patientMsg").textContent =
-      "Esa póliza ya existe entre los clientes visibles.";
+      "Esa póliza ya existe en los registros visibles.";
     return;
   }
 
@@ -477,30 +488,26 @@ $("patientForm").addEventListener("submit", async e => {
     policy_number: policy,
     total,
     paid: 0,
-    installments,
-    installment_amount: installmentAmount,
+    installments: inst,
+    installment_amount: ia,
     address: $("pAddress").value.trim() || null,
     observations: $("pObservations").value.trim() || null,
     source_device: "DENTAL JG PANEL"
   };
 
-  const button = $("patientForm").querySelector('[type="submit"]');
-  button.disabled = true;
   $("patientMsg").textContent = "Guardando…";
 
-  try {
-    const { error } = await db.from("patients").insert(payload);
-    if (error) throw error;
+  const { error } = await db.from("patients").insert(payload);
 
-    $("patientForm").reset();
-    $("patientMsg").textContent = "Cliente guardado.";
-    await loadData();
-  } catch (error) {
+  if (error) {
     fail(error, "No se pudo guardar el cliente");
-    $("patientMsg").textContent = "No guardado.";
-  } finally {
-    button.disabled = false;
+    $("patientMsg").textContent = "No guardado";
+    return;
   }
+
+  $("patientForm").reset();
+  $("patientMsg").textContent = "Cliente guardado.";
+  await loadData();
 });
 
 $("paymentForm").addEventListener("submit", async e => {
@@ -511,8 +518,8 @@ $("paymentForm").addEventListener("submit", async e => {
     return;
   }
 
-  const patient = patients.find(p =>
-    String(p.id) === $("payPatient").value
+  const patient = patients.find(
+    p => String(p.id) === $("payPatient").value
   );
   const amount = Number($("payAmount").value);
 
@@ -522,7 +529,8 @@ $("paymentForm").addEventListener("submit", async e => {
   }
 
   const remaining = Math.max(
-    0, Number(patient.total || 0) - Number(patient.paid || 0)
+    0,
+    Number(patient.total || 0) - Number(patient.paid || 0)
   );
 
   if (amount > remaining + 0.005) {
@@ -530,35 +538,28 @@ $("paymentForm").addEventListener("submit", async e => {
     return;
   }
 
-  const button = $("paymentForm").querySelector('[type="submit"]');
-  button.disabled = true;
-  $("paymentMsg").textContent = "Registrando pago de forma transaccional…";
+  $("paymentMsg").textContent = "Registrando mediante operación segura…";
 
-  try {
-    const { error } = await db.rpc("register_dental_jg_payment", {
-      p_patient_id: patient.id,
-      p_amount: amount,
-      p_concept: $("payConcept").value.trim() || "Abono",
-      p_reference: $("payReference").value.trim()
-    });
+  const { error } = await db.rpc("register_dental_jg_payment", {
+    p_patient_id: patient.id,
+    p_amount: amount,
+    p_concept: $("payConcept").value.trim() || "Abono",
+    p_reference: $("payReference").value.trim()
+  });
 
-    if (error) {
-      throw new Error(
-        "No se registró el pago. No se hizo INSERT alternativo. " +
-        error.message
-      );
-    }
-
-    $("paymentForm").reset();
-    $("paymentMsg").textContent = "Pago registrado.";
-    await loadData();
-  } catch (error) {
-    fail(error, "No se pudo confirmar el pago");
+  if (error) {
+    fail(
+      error,
+      "No se registró el pago. No se hizo INSERT alternativo para evitar duplicados."
+    );
     $("paymentMsg").textContent =
-      "No confirmado. Verifica el historial antes de volver a intentarlo.";
-  } finally {
-    button.disabled = false;
+      "No registrado: revisa el RPC transaccional register_dental_jg_payment.";
+    return;
   }
+
+  $("paymentForm").reset();
+  $("paymentMsg").textContent = "Pago registrado.";
+  await loadData();
 });
 
 $("clinicForm").addEventListener("submit", async e => {
@@ -573,30 +574,25 @@ $("clinicForm").addEventListener("submit", async e => {
   if (!name) return;
 
   if (clinics.some(c =>
-    String(c.name).trim().toLowerCase() === name.toLowerCase()
+    String(c.name).toLowerCase() === name.toLowerCase()
   )) {
     note("Esa clínica ya existe.");
     return;
   }
 
-  const button = $("clinicForm").querySelector('[type="submit"]');
-  button.disabled = true;
+  const { error } = await db.from("clinics").insert({ name });
 
-  try {
-    const { error } = await db.from("clinics").insert({ name });
-    if (error) throw error;
-
-    $("clinicName").value = "";
-    await loadData();
-  } catch (error) {
+  if (error) {
     fail(error, "No se pudo guardar la clínica");
-  } finally {
-    button.disabled = false;
+    return;
   }
+
+  $("clinicName").value = "";
+  await loadData();
 });
 
 if (!ready) {
   showLogin("Configura config.js antes de iniciar sesión.");
 }
 })();
-                 
+      
