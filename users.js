@@ -16,16 +16,18 @@
     '"': "&quot;", "'": "&#39;"
   })[c]);
 
-  function say(text, error = false) {
+  function say(message, error = false) {
     const el = $("userAdminMessage");
     if (!el) return;
-    el.textContent = text;
+    el.textContent = message;
     el.className = "user-message" + (error ? " error" : "");
     el.setAttribute("role", error ? "alert" : "status");
     el.setAttribute("aria-live", "polite");
   }
 
   async function invoke(action, fields = {}) {
+    if (!db) throw new Error("Supabase todavía no está conectado.");
+
     const { data, error } = await db.functions.invoke(
       FUNCTION_NAME,
       { body: { action, ...fields } }
@@ -53,6 +55,7 @@
     const panel = document.createElement("div");
     panel.id = "userManagementPanel";
     panel.className = "panel";
+
     panel.innerHTML = `
       <div class="section-head">
         <div>
@@ -92,6 +95,7 @@
       <p class="muted">
         Usa contraseñas temporales seguras y compártelas de forma privada.
       </p>
+
       <div id="userAdminMessage" class="user-message"
         role="status" aria-live="polite">Preparando módulo…</div>
 
@@ -106,6 +110,7 @@
         </table>
       </div>
     `;
+
     admin.appendChild(panel);
 
     $("createUserForm").addEventListener("submit", createUser);
@@ -113,13 +118,16 @@
     $("userAdminRows").addEventListener("click", userAction);
   }
 
-  function isActive(u) {
-    if (typeof u.active === "boolean") return u.active;
-    if (typeof u.is_active === "boolean") return u.is_active;
-    if (u.banned_until) {
-      const t = new Date(u.banned_until).getTime();
-      if (Number.isFinite(t) && t > Date.now()) return false;
+  function isActive(user) {
+    if (typeof user.disabled === "boolean") return !user.disabled;
+    if (typeof user.active === "boolean") return user.active;
+    if (typeof user.is_active === "boolean") return user.is_active;
+
+    if (user.banned_until) {
+      const time = new Date(user.banned_until).getTime();
+      if (Number.isFinite(time) && time > Date.now()) return false;
     }
+
     return true;
   }
 
@@ -133,56 +141,67 @@
       return;
     }
 
-    body.innerHTML = users.map(u => {
-      const id = String(u.id || u.user_id || "");
-      const email = String(u.email || "");
+    body.innerHTML = users.map(user => {
+      const id = String(user.id || user.user_id || "");
+      const email = String(user.email || "");
       const role = String(
-        u.role || u.role_name || u.app_role || ""
+        user.role || user.role_name || user.app_role || ""
       ).toLowerCase();
-      const active = isActive(u);
+      const active = isActive(user);
 
-      return `<tr data-user-id="${esc(id)}">
-        <td>${esc(email || "Sin correo")}</td>
-        <td><select class="edit-user-role" aria-label="Rol para ${esc(email)}">
-          <option value="registro" ${role === "registro" ? "selected" : ""}>Registro</option>
-          <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>Cobranza</option>
-          <option value="admin" ${role === "admin" ? "selected" : ""}>Administración</option>
-        </select></td>
-        <td>${active ? "Activo" : "Inactivo"}</td>
-        <td><div class="user-actions">
-          <button type="button" class="secondary"
-            data-action="role" data-id="${esc(id)}">Guardar rol</button>
-          <button type="button" class="secondary"
-            data-action="active" data-id="${esc(id)}"
-            data-active="${active}">${active ? "Desactivar" : "Activar"}</button>
-          <button type="button" class="secondary"
-            data-action="password" data-id="${esc(id)}">Restablecer contraseña</button>
-          <button type="button" class="danger"
-            data-action="delete" data-id="${esc(id)}">Eliminar cuenta</button>
-        </div></td>
-      </tr>`;
+      return `
+        <tr data-user-id="${esc(id)}">
+          <td>${esc(email || "Sin correo")}</td>
+          <td>
+            <select class="edit-user-role" aria-label="Rol para ${esc(email)}">
+              <option value="registro" ${role === "registro" ? "selected" : ""}>Registro</option>
+              <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>Cobranza</option>
+              <option value="admin" ${role === "admin" ? "selected" : ""}>Administración</option>
+            </select>
+          </td>
+          <td>${active ? "Activo" : "Inactivo"}</td>
+          <td>
+            <div class="user-actions">
+              <button type="button" class="secondary"
+                data-action="role" data-id="${esc(id)}">Guardar rol</button>
+              <button type="button" class="secondary"
+                data-action="active" data-id="${esc(id)}"
+                data-active="${active}">${active ? "Desactivar" : "Activar"}</button>
+              <button type="button" class="secondary"
+                data-action="password" data-id="${esc(id)}">Restablecer contraseña</button>
+              <button type="button" class="danger"
+                data-action="delete" data-id="${esc(id)}">Eliminar cuenta</button>
+            </div>
+          </td>
+        </tr>
+      `;
     }).join("");
   }
 
-  async function loadUsers(
-    successMessage = "Lista de usuarios actualizada correctamente."
-  ) {
+  async function loadUsers(successMessage = "Lista de usuarios actualizada correctamente.") {
     if (!db || !activeUserId) return false;
+
     say("Consultando usuarios…");
 
     try {
       const result = await invoke("list_users");
+
       users = Array.isArray(result)
         ? result
         : (result.users || result.data?.users || []);
+
       renderUsers();
       say(successMessage);
       return true;
-    } catch (e) {
-      say("No se pudieron cargar los usuarios: " + e.message, true);
+    } catch (error) {
+      say("No se pudieron cargar los usuarios: " + error.message, true);
+
       const body = $("userAdminRows");
-      if (body) body.innerHTML =
-        '<tr><td colspan="4">Error al cargar. Revisa el mensaje anterior.</td></tr>';
+      if (body) {
+        body.innerHTML =
+          '<tr><td colspan="4">Error al cargar. Revisa el mensaje anterior.</td></tr>';
+      }
+
       return false;
     }
   }
@@ -196,10 +215,7 @@
     const button = $("createUserButton");
 
     if (!email || password.length < 8) {
-      say(
-        "Escribe un correo válido y una contraseña de al menos 8 caracteres.",
-        true
-      );
+      say("Escribe un correo válido y una contraseña de al menos 8 caracteres.", true);
       return;
     }
 
@@ -211,14 +227,12 @@
       $("createUserForm").reset();
 
       const refreshed = await loadUsers("Cuenta creada correctamente.");
+
       if (!refreshed) {
-        say(
-          "La cuenta se creó correctamente, pero no se pudo actualizar la lista. Pulsa «Actualizar lista».",
-          true
-        );
+        say("La cuenta se creó, pero no se pudo actualizar la lista. Pulsa Actualizar lista.", true);
       }
-    } catch (e) {
-      say("No se pudo crear la cuenta: " + e.message, true);
+    } catch (error) {
+      say("No se pudo crear la cuenta: " + error.message, true);
     } finally {
       button.disabled = false;
     }
@@ -233,16 +247,13 @@
     const row = button.closest("tr");
 
     if (!id || !row) {
-      say(
-        "No se encontró el identificador del usuario. Actualiza la lista e inténtalo de nuevo.",
-        true
-      );
+      say("No se encontró el usuario. Actualiza la lista e inténtalo de nuevo.", true);
       return;
     }
 
-    try {
-      button.disabled = true;
+    button.disabled = true;
 
+    try {
       if (action === "role") {
         const role = row.querySelector(".edit-user-role").value;
 
@@ -258,17 +269,13 @@
       } else if (action === "active") {
         const active = button.dataset.active !== "true";
 
-        if (!confirm(
-          active ? "¿Activar esta cuenta?" : "¿Desactivar esta cuenta?"
-        )) return;
+        if (!confirm(active ? "¿Activar esta cuenta?" : "¿Desactivar esta cuenta?")) return;
 
         say(active ? "Activando usuario…" : "Desactivando usuario…");
         await invoke("set_active", { user_id: id, active });
 
         const refreshed = await loadUsers(
-          active
-            ? "Usuario activado correctamente."
-            : "Usuario desactivado correctamente."
+          active ? "Usuario activado correctamente." : "Usuario desactivado correctamente."
         );
 
         if (!refreshed) {
@@ -297,20 +304,19 @@
       } else if (action === "delete") {
         const email = row.cells?.[0]?.textContent?.trim() || "esta cuenta";
 
-        if (!confirm(
-          `¿Eliminar definitivamente ${email}? Esta acción no se puede deshacer.`
-        )) return;
-
-        if (!confirm(
-          "Confirmación final: se borrará la cuenta de acceso. ¿Continuar?"
-        )) return;
+        if (!confirm(`¿Eliminar definitivamente ${email}? Esta acción no se puede deshacer.`)) return;
+        if (!confirm("Confirmación final: se borrará la cuenta de acceso. ¿Continuar?")) return;
 
         say("Eliminando cuenta…");
         await invoke("delete_user", { user_id: id });
-        await loadUsers("Cuenta eliminada correctamente.");
+
+        const refreshed = await loadUsers("Cuenta eliminada correctamente.");
+        if (!refreshed) {
+          say("La cuenta se eliminó, pero no se pudo actualizar la lista.", true);
+        }
       }
-    } catch (e) {
-      say("No se pudo completar la acción: " + e.message, true);
+    } catch (error) {
+      say("No se pudo completar la acción: " + error.message, true);
     } finally {
       button.disabled = false;
     }
@@ -323,7 +329,9 @@
       !cfg.supabaseUrl ||
       !cfg.supabaseAnonKey ||
       !window.supabase?.createClient
-    ) return;
+    ) {
+      return;
+    }
 
     initializing = true;
 
@@ -346,22 +354,33 @@
       if (
         activeUserId === session.user.id &&
         $("userManagementPanel")
-      ) return;
+      ) {
+        return;
+      }
 
+      // Un usuario puede tener varias filas de roles.
       const { data: roleData, error: roleError } = await db
         .from("app_user_roles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
+        .eq("user_id", session.user.id);
 
-      if (roleError || roleData?.role !== "admin") return;
+      if (roleError) {
+        console.error("No se pudieron consultar los roles:", roleError);
+        return;
+      }
+
+      const isAdmin = (roleData || []).some(
+        item => String(item.role).trim().toLowerCase() === "admin"
+      );
+
+      if (!isAdmin) return;
 
       activeUserId = session.user.id;
       addPanel();
       await loadUsers();
-    } catch (e) {
-      console.error("Gestión de usuarios:", e);
-      say("Error al iniciar gestión de usuarios: " + e.message, true);
+    } catch (error) {
+      console.error("Gestión de usuarios:", error);
+      say("Error al iniciar gestión de usuarios: " + error.message, true);
     } finally {
       initializing = false;
     }
@@ -388,6 +407,26 @@
     });
 
     window.addEventListener("focus", start);
+
+    // Actualiza el módulo cuando cambia el inicio de sesión.
+    if (window.supabase?.createClient && cfg.supabaseUrl && cfg.supabaseAnonKey) {
+      try {
+        if (!db) {
+          db = window.supabase.createClient(
+            cfg.supabaseUrl,
+            cfg.supabaseAnonKey
+          );
+        }
+
+        db.auth.onAuthStateChange(() => {
+          activeUserId = null;
+          start();
+        });
+      } catch (error) {
+        console.error("Observador de sesión:", error);
+      }
+    }
+
     start();
   }
 
