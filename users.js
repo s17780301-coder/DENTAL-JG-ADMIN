@@ -301,13 +301,15 @@
         return;
       }
 
-      const { data: roleData, error: roleError } = await db
+      const { data: roleRows, error: roleError } = await db
         .from("app_user_roles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
+        .eq("user_id", session.user.id);
 
-      if (roleError || roleData?.role !== "admin") return;
+      const isAdmin = (roleRows || []).some(row =>
+        String(row.role || "").trim().toLowerCase() === "admin"
+      );
+      if (roleError || !isAdmin) return;
 
       activeUserId = session.user.id;
       addPanel();
