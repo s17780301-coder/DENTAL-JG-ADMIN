@@ -73,12 +73,16 @@ const roleMap = {
   registro_clientes: "registro"
 };
 
+/*
+ * CORRECCIÓN:
+ * app_user_roles puede contener varias filas por usuario.
+ * Se consultan todos los roles y se prioriza admin.
+ */
 async function checkRole() {
   const { data, error } = await db
     .from("app_user_roles")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
+    .select("role")
+    .eq("user_id", user.id);
 
   if (error) {
     throw new Error(
@@ -87,11 +91,15 @@ async function checkRole() {
     );
   }
 
-  const raw = String(
-    data?.role || data?.role_name || data?.app_role || ""
-  ).toLowerCase().trim();
+  const roles = (data || [])
+    .map(row =>
+      roleMap[String(row.role || "").toLowerCase().trim()]
+    )
+    .filter(Boolean);
 
-  role = roleMap[raw] || "";
+  role = roles.includes("admin") ? "admin" :
+    roles.includes("cobranza") ? "cobranza" :
+    roles.includes("registro") ? "registro" : "";
 
   if (!role) {
     throw new Error(
@@ -406,7 +414,6 @@ $("loginForm").addEventListener("submit", async e => {
 
     setNavigation();
 
-    // Avisar al módulo de usuarios cuando la sesión esté lista.
     document.dispatchEvent(new CustomEvent("dentaljg:session-ready", {
       detail: { userId: user.id, role }
     }));
@@ -595,4 +602,3 @@ if (!ready) {
   showLogin("Configura config.js antes de iniciar sesión.");
 }
 })();
-      
