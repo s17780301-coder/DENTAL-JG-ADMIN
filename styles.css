@@ -15,7 +15,7 @@ img{max-width:100%}
 /* DENTAL JG 10.8.73: acciones del inicio */
 .quick-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}.quick-actions button{min-height:44px}
 
-/* DENTAL JG 10.8.74 — portal de aplicaciones e inicio de sesión */
+/* DENTAL JG 10.8.75 — portal de aplicaciones e inicio de sesión */
 :root{--ink:#123d3b;--muted:#6c8583;--teal:#12a99a;--deep:#062f30;--line:#dbe9e6;--bg:#f3f8f7;--white:#fff;--mint:#d9f5ee}
 body{min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#d7f4ed 0,transparent 48%),linear-gradient(180deg,#f8fbfa 0%,#edf5f3 100%)}
 .portal-wrap{min-height:100vh;max-width:1120px;margin:auto;padding:clamp(26px,5vw,64px) clamp(18px,4vw,44px) 26px;display:flex;flex-direction:column;justify-content:center}
@@ -43,3 +43,28 @@ body{min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#d7f4ed 0,t
 .home-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}.home-status-item{display:flex;align-items:center;gap:12px;background:#f5faf9;border:1px solid var(--line);padding:16px;border-radius:13px}.home-status-mark{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#dff7f0;color:#078878;font-weight:900}.home-status-item b,.home-status-item small{display:block}.home-status-item b{font-size:12px}.home-status-item small{font-size:11px;margin-top:4px;line-height:1.4}
 @media(max-width:760px){.portal-wrap{justify-content:flex-start;padding-top:36px}.portal-header{flex-direction:column;text-align:center;gap:12px;margin-bottom:28px}.portal-logo{width:104px;height:104px}.portal-brand h1{font-size:36px}.portal-brand .eyebrow{letter-spacing:2px}.app-tiles{grid-template-columns:1fr;max-width:430px;gap:13px}.app-tile{min-height:0;display:grid;grid-template-columns:72px 1fr 22px;grid-template-rows:auto auto;align-items:center;text-align:left;gap:4px 15px;padding:17px 17px;border-radius:18px}.app-tile:before{width:4px;height:auto;inset:0 auto 0 0}.app-icon{grid-row:1/3;width:68px;height:68px;border-radius:20px;margin:0}.app-icon svg{width:37px;height:37px}.app-name{align-self:end;font-size:16px}.app-description{align-self:start;max-width:none;font-size:11px}.tile-arrow{right:16px;top:50%;transform:translateY(-50%)}.app-tile:hover .tile-arrow{transform:translate(2px,calc(-50% - 2px))}.portal-footer{margin-top:24px;line-height:1.5}.home-status-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.app-tile,.tile-arrow{transition:none}}
+
+/* DENTAL JG 10.8.75 — ajustes de portal móvil y encabezado */
+.portal-header{flex-direction:column;text-align:center;gap:10px;margin-bottom:30px}
+.portal-logo{width:clamp(130px,22vw,190px);height:auto;max-height:150px}
+.portal-brand{min-width:0;text-align:center}
+.portal-brand .eyebrow{font-size:clamp(12px,2.4vw,15px);letter-spacing:3px;line-height:1.4}
+.portal-brand .portal-subtitle{margin:10px 0 0;color:var(--muted);font-size:clamp(14px,2.2vw,18px);line-height:1.5}
+@media(max-width:760px){
+ .portal-wrap{padding:28px 16px 24px;justify-content:flex-start}
+ .portal-header{gap:8px;margin-bottom:28px}
+ .portal-logo{width:clamp(128px,34vw,160px);height:auto;max-height:132px}
+ .portal-brand .eyebrow{font-size:13px;letter-spacing:2.5px}
+ .portal-brand .portal-subtitle{font-size:15px;margin-top:8px}
+ .portal-rule{gap:10px;margin-bottom:18px}
+ .portal-rule p{font-size:10px;letter-spacing:1.5px}
+ .app-tiles{grid-template-columns:minmax(0,1fr);width:100%;max-width:520px;gap:12px}
+ .app-tile{display:grid;grid-template-columns:68px minmax(0,1fr);grid-template-rows:auto auto;column-gap:15px;row-gap:3px;align-items:center;min-width:0;width:100%;min-height:112px;padding:16px 44px 16px 17px;text-align:left}
+ .app-icon{grid-column:1;grid-row:1/3;width:68px;height:68px;min-width:68px;margin:0;border-radius:20px}
+ .app-name{grid-column:2;grid-row:1;align-self:end;min-width:0;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+ .app-description{grid-column:2;grid-row:2;align-self:start;min-width:0;max-width:none;font-size:12px;line-height:1.4;overflow-wrap:anywhere;word-break:normal;white-space:normal}
+ .tile-arrow{right:16px;top:50%;transform:translateY(-50%)}
+ .app-tile:hover .tile-arrow{transform:translate(2px,calc(-50% - 2px))}
+ .portal-footer{margin-top:22px;font-size:12px;line-height:1.5}
+}
+@media(max-width:380px){.app-tile{grid-template-columns:58px minmax(0,1fr);column-gap:12px;padding-left:13px;padding-right:38px}.app-icon{width:58px;height:58px;min-width:58px;border-radius:17px}.app-icon svg{width:33px;height:33px}.app-name{font-size:15px}.app-description{font-size:11px}}
