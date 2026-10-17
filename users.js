@@ -1,319 +1,399 @@
 
-/* DENTAL JG — Administración de usuarios
-   JavaScript para el navegador. No es código de Supabase Edge Function. */
 (() => {
-  'use strict';
+  "use strict";
 
+  const cfg = window.DENTAL_CONFIG || {};
   const $ = id => document.getElementById(id);
-  const FUNCTION_NAME = 'administrar-usuarios';
+  const FUNCTION_NAME = "administrar-usuarios";
 
   let db = null;
-  let currentRole = '';
+  let activeUserId = null;
+  let initializing = false;
+  let users = [];
 
-  const escapeHTML = value =>
-    String(value ?? '').replace(/[&<>"']/g, char => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    })[char]);
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[c]);
 
-  function normalizeRole(value) {
-    const role = String(value || '').toLowerCase().trim();
-
-    if (['admin', 'administrator', 'administrador', 'owner'].includes(role)) {
-      return 'admin';
-    }
-
-    if (['cobranza', 'collection', 'collector'].includes(role)) {
-      return 'cobranza';
-    }
-
-    if ([
-      'registro',
-      'registrador',
-      'registration',
-      'registro_clientes'
-    ].includes(role)) {
-      return 'registro';
-    }
-
-    return '';
+  function say(text, error = false) {
+    const el = $("userAdminMessage");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "user-message" + (error ? " error" : "");
+    el.setAttribute("role", error ? "alert" : "status");
+    el.setAttribute("aria-live", "polite");
   }
 
-  function showMessage(message, isError = false) {
-    const element = $('userCreateMsg');
-
-    if (element) {
-      element.textContent = message;
-      element.style.color = isError ? '#b42318' : '';
-    }
-  }
-
-  function showNavigation(isAdmin) {
-    document
-      .querySelector('[data-view="register-users"]')
-      ?.classList.toggle('hidden', !isAdmin);
-  }
-
-  async function invokeAdminFunction(action, fields = {}) {
-    if (!db) {
-      throw new Error(
-        'No hay una sesión activa. Cierra sesión e inicia nuevamente.'
-      );
-    }
-
-    const { data, error } = await db.functions.invoke(FUNCTION_NAME, {
-      body: { action, ...fields }
-    });
+  async function invoke(action, fields = {}) {
+    const { data, error } = await db.functions.invoke(
+      FUNCTION_NAME,
+      { body: { action, ...fields } }
+    );
 
     if (error) {
-      let message = error.message || 'Error en la función de usuarios.';
-
+      let msg = error.message || "Error al comunicarse con Supabase.";
       try {
-        const response = await error.context?.json?.();
-        if (response?.error) message = response.error;
+        if (error.context && typeof error.context.json === "function") {
+          const body = await error.context.json();
+          msg = body.error || body.message || msg;
+        }
       } catch (_) {}
-
-      throw new Error(message);
+      throw new Error(msg);
     }
 
-    if (data?.error) {
-      throw new Error(data.error);
-    }
-
-    return data || {};
+    if (data?.error) throw new Error(data.error);
+    return data;
   }
 
-  async function loadUsers() {
-    if (currentRole !== 'admin') return;
+  function addPanel() {
+    const admin = $("admin");
+    if (!admin || $("userManagementPanel")) return;
 
-    const tableBody = $('managedUsersRows');
-    if (!tableBody) return;
+    const panel = document.createElement("div");
+    panel.id = "userManagementPanel";
+    panel.className = "panel";
+    panel.innerHTML = `
+      <div class="section-head">
+        <div>
+          <h3>Gestión de usuarios</h3>
+          <p>Crea cuentas, asigna roles, activa o desactiva accesos
+          y restablece contraseñas.</p>
+        </div>
+        <button id="refreshUsers" class="secondary" type="button">
+          Actualizar lista
+        </button>
+      </div>
 
-    tableBody.innerHTML =
-      '<tr><td colspan="5">Cargando usuarios…</td></tr>';
+      <form id="createUserForm" class="user-create-grid">
+        <label>Correo electrónico *
+          <input id="newUserEmail" type="email" required maxlength="254"
+            autocomplete="email">
+        </label>
+        <label>Contraseña temporal *
+          <input id="newUserPassword" type="password"
+            required minlength="8" maxlength="128"
+            autocomplete="new-password">
+        </label>
+        <label>Rol *
+          <select id="newUserRole" required>
+            <option value="registro">Registro de clientes</option>
+            <option value="cobranza">Cobranza</option>
+            <option value="admin">Administración</option>
+          </select>
+        </label>
+        <div class="user-create-action">
+          <button id="createUserButton" class="primary" type="submit">
+            Crear cuenta
+          </button>
+        </div>
+      </form>
+
+      <p class="muted">
+        Usa contraseñas temporales seguras y compártelas de forma privada.
+      </p>
+      <div id="userAdminMessage" class="user-message"
+        role="status" aria-live="polite">Preparando módulo…</div>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="userAdminRows">
+            <tr><td colspan="4">Cargando usuarios…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+    admin.appendChild(panel);
+
+    $("createUserForm").addEventListener("submit", createUser);
+    $("refreshUsers").addEventListener("click", () => loadUsers());
+    $("userAdminRows").addEventListener("click", userAction);
+  }
+
+  function isActive(u) {
+    if (typeof u.active === "boolean") return u.active;
+    if (typeof u.is_active === "boolean") return u.is_active;
+    if (u.banned_until) {
+      const t = new Date(u.banned_until).getTime();
+      if (Number.isFinite(t) && t > Date.now()) return false;
+    }
+    return true;
+  }
+
+  function renderUsers() {
+    const body = $("userAdminRows");
+    if (!body) return;
+
+    if (!users.length) {
+      body.innerHTML =
+        '<tr><td colspan="4">No se encontraron usuarios.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = users.map(u => {
+      const id = String(u.id || u.user_id || "");
+      const email = String(u.email || "");
+      const role = String(
+        u.role || u.role_name || u.app_role || ""
+      ).toLowerCase();
+      const active = isActive(u);
+
+      return `<tr data-user-id="${esc(id)}">
+        <td>${esc(email || "Sin correo")}</td>
+        <td><select class="edit-user-role" aria-label="Rol para ${esc(email)}">
+          <option value="registro" ${role === "registro" ? "selected" : ""}>Registro</option>
+          <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>Cobranza</option>
+          <option value="admin" ${role === "admin" ? "selected" : ""}>Administración</option>
+        </select></td>
+        <td>${active ? "Activo" : "Inactivo"}</td>
+        <td><div class="user-actions">
+          <button type="button" class="secondary"
+            data-action="role" data-id="${esc(id)}">Guardar rol</button>
+          <button type="button" class="secondary"
+            data-action="active" data-id="${esc(id)}"
+            data-active="${active}">${active ? "Desactivar" : "Activar"}</button>
+          <button type="button" class="secondary"
+            data-action="password" data-id="${esc(id)}">Restablecer contraseña</button>
+          <button type="button" class="danger"
+            data-action="delete" data-id="${esc(id)}">Eliminar cuenta</button>
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function loadUsers(
+    successMessage = "Lista de usuarios actualizada correctamente."
+  ) {
+    if (!db || !activeUserId) return false;
+    say("Consultando usuarios…");
 
     try {
-      const response = await invokeAdminFunction('list_users');
-      const users = Array.isArray(response.users) ? response.users : [];
-
-      tableBody.innerHTML = users.map(user => {
-        const id = escapeHTML(user.id || user.user_id);
-        const email = escapeHTML(user.email || 'Sin correo');
-        const role = normalizeRole(user.role) || 'registro';
-        const disabled = Boolean(user.disabled);
-
-        return `
-          <tr>
-            <td>${email}</td>
-            <td>
-              <select data-role-id="${id}" aria-label="Rol de ${email}">
-                <option value="registro" ${role === 'registro' ? 'selected' : ''}>
-                  Registro de clientes
-                </option>
-                <option value="cobranza" ${role === 'cobranza' ? 'selected' : ''}>
-                  Cobranza
-                </option>
-                <option value="admin" ${role === 'admin' ? 'selected' : ''}>
-                  Administración
-                </option>
-              </select>
-            </td>
-            <td>${disabled ? 'Desactivada' : 'Activa'}</td>
-            <td>${escapeHTML(user.last_sign_in_at || '—')}</td>
-            <td>
-              <button type="button" class="secondary"
-                data-act="role" data-id="${id}">
-                Guardar rol
-              </button>
-
-              <button type="button" class="secondary"
-                data-act="active" data-id="${id}"
-                data-active="${disabled}">
-                ${disabled ? 'Activar' : 'Desactivar'}
-              </button>
-
-              <button type="button" class="secondary"
-                data-act="password" data-id="${id}"
-                data-email="${email}">
-                Cambiar contraseña
-              </button>
-            </td>
-          </tr>`;
-      }).join('') ||
-      '<tr><td colspan="5">No hay usuarios registrados.</td></tr>';
-
-    } catch (error) {
-      console.error('DENTAL JG — Cargar usuarios:', error);
-
-      tableBody.innerHTML =
-        '<tr><td colspan="5">No se pudieron cargar los usuarios.</td></tr>';
-
-      showMessage(error.message, true);
+      const result = await invoke("list_users");
+      users = Array.isArray(result)
+        ? result
+        : (result.users || result.data?.users || []);
+      renderUsers();
+      say(successMessage);
+      return true;
+    } catch (e) {
+      say("No se pudieron cargar los usuarios: " + e.message, true);
+      const body = $("userAdminRows");
+      if (body) body.innerHTML =
+        '<tr><td colspan="4">Error al cargar. Revisa el mensaje anterior.</td></tr>';
+      return false;
     }
   }
 
-  async function initializeSession(client, user) {
-    db = client;
-    currentRole = '';
-
-    try {
-      const { data, error } = await db
-        .from('app_user_roles')
-        .select('role')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      const roles = (data || []).map(item => normalizeRole(item.role));
-      currentRole = roles.includes('admin') ? 'admin' : '';
-
-      showNavigation(currentRole === 'admin');
-
-      if (currentRole === 'admin') {
-        await loadUsers();
-      }
-    } catch (error) {
-      console.error('DENTAL JG — Validación de permisos:', error);
-      currentRole = '';
-      showNavigation(false);
-    }
-  }
-
-  /* app.js debe emitir este evento después de validar la sesión. */
-  document.addEventListener('dentaljg:session-ready', event => {
-    const detail = event.detail || {};
-
-    if (detail.client && detail.user) {
-      initializeSession(detail.client, detail.user);
-    }
-  });
-
-  /* Crear usuario */
-  $('userCreateForm')?.addEventListener('submit', async event => {
+  async function createUser(event) {
     event.preventDefault();
 
-    if (currentRole !== 'admin') {
-      showMessage('Solo Administración puede crear usuarios.', true);
-      return;
-    }
+    const email = $("newUserEmail").value.trim().toLowerCase();
+    const password = $("newUserPassword").value;
+    const role = $("newUserRole").value;
+    const button = $("createUserButton");
 
-    const email = $('newUserEmail').value.trim().toLowerCase();
-    const password = $('newUserPassword').value;
-    const role = $('newUserRole').value;
-    const button = $('createUserButton');
-
-    if (password.length < 8) {
-      showMessage('La contraseña debe tener al menos 8 caracteres.', true);
+    if (!email || password.length < 8) {
+      say(
+        "Escribe un correo válido y una contraseña de al menos 8 caracteres.",
+        true
+      );
       return;
     }
 
     button.disabled = true;
-    showMessage('Creando usuario…');
+    say("Creando cuenta…");
 
     try {
-      await invokeAdminFunction('create_user', {
-        email,
-        password,
-        role
-      });
+      await invoke("create_user", { email, password, role });
+      $("createUserForm").reset();
 
-      $('userCreateForm').reset();
-      showMessage('Usuario creado correctamente.');
-      await loadUsers();
-
-    } catch (error) {
-      showMessage(error.message, true);
+      const refreshed = await loadUsers("Cuenta creada correctamente.");
+      if (!refreshed) {
+        say(
+          "La cuenta se creó correctamente, pero no se pudo actualizar la lista. Pulsa «Actualizar lista».",
+          true
+        );
+      }
+    } catch (e) {
+      say("No se pudo crear la cuenta: " + e.message, true);
     } finally {
       button.disabled = false;
     }
-  });
+  }
 
-  /* Actualizar listado */
-  $('usersRefresh')?.addEventListener('click', loadUsers);
-
-  /* Cambiar rol, activar/desactivar o restablecer contraseña */
-  $('managedUsersRows')?.addEventListener('click', async event => {
-    const button = event.target.closest('button[data-act]');
+  async function userAction(event) {
+    const button = event.target.closest("button[data-action]");
     if (!button) return;
 
-    if (currentRole !== 'admin') {
-      showMessage('No tienes permisos para realizar esta acción.', true);
+    const id = button.dataset.id;
+    const action = button.dataset.action;
+    const row = button.closest("tr");
+
+    if (!id || !row) {
+      say(
+        "No se encontró el identificador del usuario. Actualiza la lista e inténtalo de nuevo.",
+        true
+      );
       return;
     }
 
-    const id = button.dataset.id;
-    const action = button.dataset.act;
-
-    button.disabled = true;
-
     try {
-      if (action === 'role') {
-        const select = document.querySelector(
-          `[data-role-id="${CSS.escape(id)}"]`
+      button.disabled = true;
+
+      if (action === "role") {
+        const role = row.querySelector(".edit-user-role").value;
+
+        if (!confirm("¿Confirmas cambiar el rol de esta cuenta?")) return;
+
+        say("Guardando rol…");
+        await invoke("set_role", { user_id: id, role });
+
+        const refreshed = await loadUsers("Rol actualizado correctamente.");
+        if (!refreshed) {
+          say("El rol se guardó, pero no se pudo actualizar la lista.", true);
+        }
+      } else if (action === "active") {
+        const active = button.dataset.active !== "true";
+
+        if (!confirm(
+          active ? "¿Activar esta cuenta?" : "¿Desactivar esta cuenta?"
+        )) return;
+
+        say(active ? "Activando usuario…" : "Desactivando usuario…");
+        await invoke("set_active", { user_id: id, active });
+
+        const refreshed = await loadUsers(
+          active
+            ? "Usuario activado correctamente."
+            : "Usuario desactivado correctamente."
         );
 
-        if (!select) throw new Error('No se encontró el selector de rol.');
-
-        await invokeAdminFunction('set_role', {
-          user_id: id,
-          role: select.value
-        });
-
-        showMessage('Rol actualizado correctamente.');
-        await loadUsers();
-
-      } else if (action === 'active') {
-        const currentlyDisabled = button.dataset.active === 'true';
-
-        const confirmed = confirm(
-          currentlyDisabled
-            ? '¿Deseas activar esta cuenta?'
-            : '¿Deseas desactivar esta cuenta?'
-        );
-
-        if (!confirmed) return;
-
-        await invokeAdminFunction('set_active', {
-          user_id: id,
-          active: currentlyDisabled
-        });
-
-        showMessage('Estado de la cuenta actualizado.');
-        await loadUsers();
-
-      } else if (action === 'password') {
-        const email = button.dataset.email || '';
+        if (!refreshed) {
+          say("El estado se guardó, pero no se pudo actualizar la lista.", true);
+        }
+      } else if (action === "password") {
         const password = prompt(
-          `Nueva contraseña para ${email} (mínimo 8 caracteres):`
+          "Escribe la nueva contraseña temporal (mínimo 8 caracteres):"
         );
 
-        if (password === null) return;
-
-        if (password.length < 8) {
-          throw new Error(
-            'La contraseña debe tener al menos 8 caracteres.'
-          );
+        if (password === null) {
+          say("Operación cancelada.");
+          return;
         }
 
-        await invokeAdminFunction('reset_password', {
-          user_id: id,
-          password
-        });
+        if (password.length < 8) {
+          say("La contraseña debe tener al menos 8 caracteres.", true);
+          return;
+        }
 
-        showMessage('Contraseña restablecida correctamente.');
-        alert('Contraseña restablecida correctamente.');
+        if (!confirm("¿Confirmas restablecer esta contraseña?")) return;
+
+        say("Restableciendo contraseña…");
+        await invoke("reset_password", { user_id: id, password });
+        say("Contraseña restablecida correctamente.");
+      } else if (action === "delete") {
+        const email = row.cells?.[0]?.textContent?.trim() || "esta cuenta";
+
+        if (!confirm(
+          `¿Eliminar definitivamente ${email}? Esta acción no se puede deshacer.`
+        )) return;
+
+        if (!confirm(
+          "Confirmación final: se borrará la cuenta de acceso. ¿Continuar?"
+        )) return;
+
+        say("Eliminando cuenta…");
+        await invoke("delete_user", { user_id: id });
+        await loadUsers("Cuenta eliminada correctamente.");
       }
-
-    } catch (error) {
-      console.error('DENTAL JG — Acción de usuario:', error);
-      showMessage(error.message, true);
-      alert(error.message);
+    } catch (e) {
+      say("No se pudo completar la acción: " + e.message, true);
     } finally {
       button.disabled = false;
     }
-  });
+  }
+
+  async function initialize() {
+    if (initializing) return;
+
+    if (
+      !cfg.supabaseUrl ||
+      !cfg.supabaseAnonKey ||
+      !window.supabase?.createClient
+    ) return;
+
+    initializing = true;
+
+    try {
+      if (!db) {
+        db = window.supabase.createClient(
+          cfg.supabaseUrl,
+          cfg.supabaseAnonKey
+        );
+      }
+
+      const { data, error } = await db.auth.getSession();
+      const session = data?.session;
+
+      if (error || !session?.user) {
+        activeUserId = null;
+        return;
+      }
+
+      if (
+        activeUserId === session.user.id &&
+        $("userManagementPanel")
+      ) return;
+
+      const { data: roleData, error: roleError } = await db
+        .from("app_user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (roleError || roleData?.role !== "admin") return;
+
+      activeUserId = session.user.id;
+      addPanel();
+      await loadUsers();
+    } catch (e) {
+      console.error("Gestión de usuarios:", e);
+      say("Error al iniciar gestión de usuarios: " + e.message, true);
+    } finally {
+      initializing = false;
+    }
+  }
+
+  function start() {
+    initialize();
+  }
+
+  function watchLogin() {
+    const app = $("app");
+
+    if (app) {
+      new MutationObserver(() => {
+        if (!app.classList.contains("hidden")) start();
+      }).observe(app, {
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) start();
+    });
+
+    window.addEventListener("focus", start);
+    start();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", watchLogin);
+  } else {
+    watchLogin();
+  }
 })();
-    
