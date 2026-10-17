@@ -1,4 +1,3 @@
-
 (() => {
   "use strict";
 
@@ -55,7 +54,7 @@
     return data;
   }
 
-  // PANEL PARA CAMBIAR EL CORREO Y LA CONTRASEÑA
+  // PANEL DE CUENTA DEL ADMINISTRADOR
   function addAccountPanel(currentUser) {
     const admin = $("admin");
     if (!admin || $("myAccountPanel")) return;
@@ -68,10 +67,7 @@
       <div class="section-head">
         <div>
           <h3>Mi cuenta de administrador</h3>
-          <p>
-            Cambia tu correo electrónico o contraseña desde el panel,
-            sin modificar el código del sistema.
-          </p>
+          <p>Cambia tu correo electrónico o contraseña desde el panel.</p>
         </div>
       </div>
 
@@ -83,20 +79,12 @@
       <form id="accountEmailForm" class="user-create-grid">
         <label>
           Nuevo correo electrónico
-          <input
-            id="accountNewEmail"
-            type="email"
-            required
-            maxlength="254"
-            autocomplete="email"
+          <input id="accountNewEmail" type="email" required
+            maxlength="254" autocomplete="email"
             placeholder="nuevo@correo.com">
         </label>
-
         <div class="user-create-action">
-          <button
-            id="accountEmailButton"
-            class="secondary"
-            type="submit">
+          <button id="accountEmailButton" class="secondary" type="submit">
             Cambiar correo
           </button>
         </div>
@@ -104,67 +92,40 @@
 
       <p class="muted">
         Supabase puede solicitar confirmación del correo actual y del nuevo.
-        Revisa tus mensajes y completa las confirmaciones antes de usar
-        el nuevo correo para iniciar sesión.
+        Completa las confirmaciones antes de iniciar sesión con el nuevo correo.
       </p>
 
-      <form id="accountPasswordForm" class="user-create-grid">
+      <form id="accountPasswordForm" class="user-create-grid" novalidate>
         <label>
           Nueva contraseña
-          <input
-            id="accountNewPassword"
-            type="password"
-            required
-            minlength="8"
-            maxlength="128"
-            autocomplete="new-password"
+          <input id="accountNewPassword" type="password" required
+            minlength="8" maxlength="128" autocomplete="new-password"
             placeholder="Mínimo 8 caracteres">
         </label>
-
         <label>
           Confirmar contraseña
-          <input
-            id="accountConfirmPassword"
-            type="password"
-            required
-            minlength="8"
-            maxlength="128"
-            autocomplete="new-password"
+          <input id="accountConfirmPassword" type="password" required
+            minlength="8" maxlength="128" autocomplete="new-password"
             placeholder="Repite la contraseña">
         </label>
-
         <div class="user-create-action">
-          <button
-            id="accountPasswordButton"
-            class="primary"
-            type="submit">
+          <button id="accountPasswordButton" class="primary" type="submit">
             Actualizar contraseña
           </button>
         </div>
       </form>
 
-      <div
-        id="accountMessage"
-        class="user-message"
-        role="status"
-        aria-live="polite">
-      </div>
+      <div id="accountMessage" class="user-message"
+        role="status" aria-live="polite"></div>
     `;
 
     admin.prepend(panel);
 
-    $("accountEmailForm").addEventListener(
-      "submit",
-      changeOwnEmail
-    );
-
-    $("accountPasswordForm").addEventListener(
-      "submit",
-      changeOwnPassword
-    );
+    $("accountEmailForm").addEventListener("submit", changeOwnEmail);
+    $("accountPasswordForm").addEventListener("submit", changeOwnPassword);
   }
 
-  // CAMBIAR EL CORREO DE LA CUENTA CON SESIÓN INICIADA
+  // CAMBIAR CORREO
   async function changeOwnEmail(event) {
     event.preventDefault();
 
@@ -175,37 +136,34 @@
       $("accountCurrentEmail").textContent || ""
     ).trim().toLowerCase();
 
-    if (!email || !email.includes("@")) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       accountSay("Escribe un correo electrónico válido.", true);
+      input.focus();
       return;
     }
 
     if (email === currentEmail) {
       accountSay("Ese ya es el correo actual.", true);
+      input.focus();
       return;
     }
 
     if (!confirm(
-      "¿Confirmas la solicitud para cambiar el correo de tu cuenta? " +
-      "Necesitarás completar las confirmaciones que envíe Supabase."
-    )) {
-      return;
-    }
+      "¿Confirmas la solicitud para cambiar el correo? " +
+      "Supabase podría pedir confirmaciones por correo electrónico."
+    )) return;
 
     button.disabled = true;
     accountSay("Solicitando cambio de correo…");
 
     try {
       const { error } = await db.auth.updateUser({ email });
-
       if (error) throw error;
 
       input.value = "";
-
       accountSay(
-        "Solicitud enviada correctamente. Revisa el correo actual y " +
-        "el nuevo correo, y completa las confirmaciones que te envíe " +
-        "Supabase. El cambio puede quedar pendiente hasta confirmarlo."
+        "Solicitud enviada. Revisa los correos de confirmación de Supabase. " +
+        "El cambio puede quedar pendiente hasta completar las confirmaciones."
       );
     } catch (e) {
       accountSay(
@@ -218,46 +176,71 @@
     }
   }
 
-  // CAMBIAR LA CONTRASEÑA DE LA PROPIA CUENTA
+  // CAMBIAR CONTRASEÑA: VALIDACIÓN EXPLÍCITA ANTES DE CONTACTAR SUPABASE
   async function changeOwnPassword(event) {
     event.preventDefault();
 
-    const password = $("accountNewPassword").value;
-    const confirmation = $("accountConfirmPassword").value;
+    const passwordInput = $("accountNewPassword");
+    const confirmationInput = $("accountConfirmPassword");
     const button = $("accountPasswordButton");
 
-    if (password.length < 8) {
+    const password = passwordInput.value;
+    const confirmation = confirmationInput.value;
+
+    // No permitir contraseña vacía ni compuesta solo por espacios.
+    if (!password || !password.trim()) {
       accountSay(
-        "La contraseña debe tener al menos 8 caracteres.",
+        "Escribe la nueva contraseña. El campo no puede quedar vacío.",
         true
       );
+      passwordInput.focus();
+      return;
+    }
+
+    // No permitir confirmación vacía ni compuesta solo por espacios.
+    if (!confirmation || !confirmation.trim()) {
+      accountSay(
+        "Confirma la nueva contraseña. Este campo no puede quedar vacío.",
+        true
+      );
+      confirmationInput.focus();
+      return;
+    }
+
+    if (password.length < 8) {
+      accountSay("La contraseña debe tener al menos 8 caracteres.", true);
+      passwordInput.focus();
+      return;
+    }
+
+    if (password.length > 128) {
+      accountSay("La contraseña no puede superar 128 caracteres.", true);
+      passwordInput.focus();
       return;
     }
 
     if (password !== confirmation) {
       accountSay("Las contraseñas no coinciden.", true);
+      confirmationInput.focus();
       return;
     }
 
     if (!confirm(
       "¿Confirmas actualizar la contraseña de tu cuenta de administrador?"
-    )) {
-      return;
-    }
+    )) return;
 
     button.disabled = true;
     accountSay("Actualizando contraseña…");
 
     try {
       const { error } = await db.auth.updateUser({ password });
-
       if (error) throw error;
 
       $("accountPasswordForm").reset();
 
       accountSay(
-        "Contraseña actualizada correctamente. Utiliza la nueva " +
-        "contraseña la próxima vez que inicies sesión."
+        "Contraseña actualizada correctamente. Usa la nueva contraseña " +
+        "la próxima vez que inicies sesión."
       );
     } catch (e) {
       accountSay(
@@ -270,7 +253,7 @@
     }
   }
 
-  // PANEL DE GESTIÓN DE USUARIOS EXISTENTE
+  // PANEL DE GESTIÓN DE USUARIOS
   function addPanel() {
     const admin = $("admin");
     if (!admin || $("userManagementPanel")) return;
@@ -283,16 +266,10 @@
       <div class="section-head">
         <div>
           <h3>Gestión de usuarios</h3>
-          <p>
-            Crea cuentas, asigna roles, activa o desactiva accesos
-            y restablece contraseñas.
-          </p>
+          <p>Crea cuentas, asigna roles, activa o desactiva accesos
+            y restablece contraseñas.</p>
         </div>
-
-        <button
-          id="refreshUsers"
-          class="secondary"
-          type="button">
+        <button id="refreshUsers" class="secondary" type="button">
           Actualizar lista
         </button>
       </div>
@@ -300,25 +277,14 @@
       <form id="createUserForm" class="user-create-grid">
         <label>
           Correo electrónico *
-          <input
-            id="newUserEmail"
-            type="email"
-            required
-            maxlength="254"
-            autocomplete="email">
+          <input id="newUserEmail" type="email" required
+            maxlength="254" autocomplete="email">
         </label>
-
         <label>
           Contraseña temporal *
-          <input
-            id="newUserPassword"
-            type="password"
-            required
-            minlength="8"
-            maxlength="128"
-            autocomplete="new-password">
+          <input id="newUserPassword" type="password" required
+            minlength="8" maxlength="128" autocomplete="new-password">
         </label>
-
         <label>
           Rol *
           <select id="newUserRole" required>
@@ -327,12 +293,8 @@
             <option value="admin">Administración</option>
           </select>
         </label>
-
         <div class="user-create-action">
-          <button
-            id="createUserButton"
-            class="primary"
-            type="submit">
+          <button id="createUserButton" class="primary" type="submit">
             Crear cuenta
           </button>
         </div>
@@ -342,28 +304,16 @@
         Usa contraseñas temporales seguras y compártelas de forma privada.
       </p>
 
-      <div
-        id="userAdminMessage"
-        class="user-message"
-        role="status"
-        aria-live="polite">
-        Preparando módulo…
-      </div>
+      <div id="userAdminMessage" class="user-message"
+        role="status" aria-live="polite">Preparando módulo…</div>
 
       <div class="table-scroll">
         <table>
           <thead>
-            <tr>
-              <th>Correo</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
+            <tr><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
           </thead>
           <tbody id="userAdminRows">
-            <tr>
-              <td colspan="4">Cargando usuarios…</td>
-            </tr>
+            <tr><td colspan="4">Cargando usuarios…</td></tr>
           </tbody>
         </table>
       </div>
@@ -384,7 +334,6 @@
       const t = new Date(u.banned_until).getTime();
       if (Number.isFinite(t) && t > Date.now()) return false;
     }
-
     return true;
   }
 
@@ -409,59 +358,25 @@
       return `
         <tr data-user-id="${esc(id)}">
           <td>${esc(email || "Sin correo")}</td>
-
           <td>
-            <select
-              class="edit-user-role"
-              aria-label="Rol para ${esc(email)}">
-              <option value="registro" ${role === "registro" ? "selected" : ""}>
-                Registro
-              </option>
-              <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>
-                Cobranza
-              </option>
-              <option value="admin" ${role === "admin" ? "selected" : ""}>
-                Administración
-              </option>
+            <select class="edit-user-role" aria-label="Rol para ${esc(email)}">
+              <option value="registro" ${role === "registro" ? "selected" : ""}>Registro</option>
+              <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>Cobranza</option>
+              <option value="admin" ${role === "admin" ? "selected" : ""}>Administración</option>
             </select>
           </td>
-
           <td>${active ? "Activo" : "Inactivo"}</td>
-
           <td>
             <div class="user-actions">
-              <button
-                type="button"
-                class="secondary"
-                data-action="role"
-                data-id="${esc(id)}">
-                Guardar rol
-              </button>
-
-              <button
-                type="button"
-                class="secondary"
-                data-action="active"
-                data-id="${esc(id)}"
-                data-active="${active}">
-                ${active ? "Desactivar" : "Activar"}
-              </button>
-
-              <button
-                type="button"
-                class="secondary"
-                data-action="password"
-                data-id="${esc(id)}">
-                Restablecer contraseña
-              </button>
-
-              <button
-                type="button"
-                class="danger"
-                data-action="delete"
-                data-id="${esc(id)}">
-                Eliminar cuenta
-              </button>
+              <button type="button" class="secondary"
+                data-action="role" data-id="${esc(id)}">Guardar rol</button>
+              <button type="button" class="secondary"
+                data-action="active" data-id="${esc(id)}"
+                data-active="${active}">${active ? "Desactivar" : "Activar"}</button>
+              <button type="button" class="secondary"
+                data-action="password" data-id="${esc(id)}">Restablecer contraseña</button>
+              <button type="button" class="danger"
+                data-action="delete" data-id="${esc(id)}">Eliminar cuenta</button>
             </div>
           </td>
         </tr>
@@ -478,7 +393,6 @@
 
     try {
       const result = await invoke("list_users");
-
       users = Array.isArray(result)
         ? result
         : (result.users || result.data?.users || []);
@@ -494,7 +408,6 @@
         body.innerHTML =
           '<tr><td colspan="4">Error al cargar. Revisa el mensaje anterior.</td></tr>';
       }
-
       return false;
     }
   }
@@ -507,11 +420,15 @@
     const role = $("newUserRole").value;
     const button = $("createUserButton");
 
-    if (!email || password.length < 8) {
-      say(
-        "Escribe un correo válido y una contraseña de al menos 8 caracteres.",
-        true
-      );
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      say("Escribe un correo electrónico válido.", true);
+      $("newUserEmail").focus();
+      return;
+    }
+
+    if (!password || !password.trim() || password.length < 8) {
+      say("La contraseña temporal es obligatoria y debe tener al menos 8 caracteres.", true);
+      $("newUserPassword").focus();
       return;
     }
 
@@ -523,11 +440,9 @@
       $("createUserForm").reset();
 
       const refreshed = await loadUsers("Cuenta creada correctamente.");
-
       if (!refreshed) {
         say(
-          "La cuenta se creó correctamente, pero no se pudo actualizar " +
-          "la lista. Pulsa «Actualizar lista».",
+          "La cuenta se creó, pero no se pudo actualizar la lista. Pulsa «Actualizar lista».",
           true
         );
       }
@@ -547,11 +462,7 @@
     const row = button.closest("tr");
 
     if (!id || !row) {
-      say(
-        "No se encontró el identificador del usuario. " +
-        "Actualiza la lista e inténtalo de nuevo.",
-        true
-      );
+      say("No se encontró el identificador del usuario. Actualiza la lista e inténtalo de nuevo.", true);
       return;
     }
 
@@ -560,36 +471,26 @@
 
       if (action === "role") {
         const role = row.querySelector(".edit-user-role").value;
-
         if (!confirm("¿Confirmas cambiar el rol de esta cuenta?")) return;
 
         say("Guardando rol…");
         await invoke("set_role", { user_id: id, role });
 
         const refreshed = await loadUsers("Rol actualizado correctamente.");
+        if (!refreshed) say("El rol se guardó, pero no se pudo actualizar la lista.", true);
 
-        if (!refreshed) {
-          say("El rol se guardó, pero no se pudo actualizar la lista.", true);
-        }
       } else if (action === "active") {
         const active = button.dataset.active !== "true";
-
-        if (!confirm(
-          active ? "¿Activar esta cuenta?" : "¿Desactivar esta cuenta?"
-        )) return;
+        if (!confirm(active ? "¿Activar esta cuenta?" : "¿Desactivar esta cuenta?")) return;
 
         say(active ? "Activando usuario…" : "Desactivando usuario…");
         await invoke("set_active", { user_id: id, active });
 
         const refreshed = await loadUsers(
-          active
-            ? "Usuario activado correctamente."
-            : "Usuario desactivado correctamente."
+          active ? "Usuario activado correctamente." : "Usuario desactivado correctamente."
         );
+        if (!refreshed) say("El estado se guardó, pero no se pudo actualizar la lista.", true);
 
-        if (!refreshed) {
-          say("El estado se guardó, pero no se pudo actualizar la lista.", true);
-        }
       } else if (action === "password") {
         const password = prompt(
           "Escribe la nueva contraseña temporal (mínimo 8 caracteres):"
@@ -600,8 +501,8 @@
           return;
         }
 
-        if (password.length < 8) {
-          say("La contraseña debe tener al menos 8 caracteres.", true);
+        if (!password.trim() || password.length < 8 || password.length > 128) {
+          say("La contraseña debe tener entre 8 y 128 caracteres y no estar vacía.", true);
           return;
         }
 
@@ -610,16 +511,12 @@
         say("Restableciendo contraseña…");
         await invoke("reset_password", { user_id: id, password });
         say("Contraseña restablecida correctamente.");
+
       } else if (action === "delete") {
         const email = row.cells?.[0]?.textContent?.trim() || "esta cuenta";
 
-        if (!confirm(
-          `¿Eliminar definitivamente ${email}? Esta acción no se puede deshacer.`
-        )) return;
-
-        if (!confirm(
-          "Confirmación final: se borrará la cuenta de acceso. ¿Continuar?"
-        )) return;
+        if (!confirm(`¿Eliminar definitivamente ${email}? Esta acción no se puede deshacer.`)) return;
+        if (!confirm("Confirmación final: se borrará la cuenta de acceso. ¿Continuar?")) return;
 
         say("Eliminando cuenta…");
         await invoke("delete_user", { user_id: id });
@@ -639,9 +536,7 @@
       !cfg.supabaseUrl ||
       !cfg.supabaseAnonKey ||
       !window.supabase?.createClient
-    ) {
-      return;
-    }
+    ) return;
 
     initializing = true;
 
@@ -665,17 +560,17 @@
         activeUserId === session.user.id &&
         $("userManagementPanel") &&
         $("myAccountPanel")
-      ) {
-        return;
-      }
+      ) return;
 
       const { data: roleData, error: roleError } = await db
         .from("app_user_roles")
         .select("role")
         .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .limit(1)
         .maybeSingle();
 
-      if (roleError || roleData?.role !== "admin") return;
+      if (roleError || !roleData) return;
 
       activeUserId = session.user.id;
 
@@ -721,4 +616,3 @@
     watchLogin();
   }
 })();
- 
