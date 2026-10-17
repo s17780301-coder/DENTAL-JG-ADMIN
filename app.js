@@ -14,6 +14,8 @@ const ready = Boolean(
 let db = null;
 let user = null;
 let role = "user";
+let selectedModule = "";
+const moduleLabels = { patients: "Registro de clientes", collection: "Cobranza", admin: "Administración" };
 let patients = [];
 let payments = [];
 let clinics = [];
@@ -394,6 +396,15 @@ $("loginForm").addEventListener("submit", async e => {
     user = data.user;
     await checkRole();
 
+    if (!selectedModule) {
+      throw new Error("Primero selecciona una aplicación para continuar.");
+    }
+    if (!allowed(selectedModule)) {
+      const wanted = moduleLabels[selectedModule] || "la aplicación seleccionada";
+      throw new Error("Tu cuenta no tiene permiso para entrar a " + wanted + ". Vuelve a aplicaciones y selecciona el área asignada a tu cuenta.");
+    }
+
+    $("appPicker").classList.add("hidden");
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
     $("userEmail").textContent = user.email || "Usuario";
@@ -408,15 +419,13 @@ $("loginForm").addEventListener("submit", async e => {
 
     await loadData();
 
-    const first =
-      role === "registro" ? "patients" :
-      role === "cobranza" ? "collection" :
-      "home";
-
-    view(first);
+    view(selectedModule);
   } catch (err) {
     showLogin(err.message || "Acceso denegado.");
     if (db) await db.auth.signOut().catch(() => {});
+    user = null;
+    role = "user";
+    $("app").classList.add("hidden");
   } finally {
     $("loginForm").querySelector("button").disabled = false;
   }
@@ -425,6 +434,29 @@ $("loginForm").addEventListener("submit", async e => {
 $("logout").addEventListener("click", async () => {
   if (db) await db.auth.signOut();
   location.reload();
+});
+
+function selectApplication(moduleName) {
+  if (!moduleLabels[moduleName]) return;
+  selectedModule = moduleName;
+  $("selectedAppLabel").textContent = moduleLabels[moduleName];
+  $("loginMsg").textContent = "";
+  $("loginForm").reset();
+  $("appPicker").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("email").focus();
+}
+
+document.querySelectorAll("[data-select-app]").forEach(tile => {
+  tile.addEventListener("click", () => selectApplication(tile.dataset.selectApp));
+});
+
+$("backToApps").addEventListener("click", () => {
+  selectedModule = "";
+  $("loginMsg").textContent = "";
+  $("loginForm").reset();
+  $("login").classList.add("hidden");
+  $("appPicker").classList.remove("hidden");
 });
 
 document.querySelectorAll(".nav").forEach(button => {
