@@ -1,52 +1,36 @@
 name: Publicar panel DENTAL JG
-
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Preparar sitio
+        run: |
+          mkdir -p public
+          cp index.html styles.css app.js config.js users.js logo-dental-jg.png public/
+      - name: Subir artefacto de Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
+    needs: build
     steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v4
-
-      - name: Verificar archivos
-        run: |
-          test -f index.html
-          test -f app.js
-          test -f styles.css
-          test -f config.js
-          test -f users.js
-
-      - name: Preparar carpeta
-        run: |
-          mkdir -p public
-          cp index.html app.js styles.css config.js users.js public/
-
-      - name: Configurar GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Subir archivos del sitio
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
-
-      - name: Publicar sitio
+      - name: Publicar GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
