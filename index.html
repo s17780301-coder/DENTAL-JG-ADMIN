@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#073b3a">
 <meta name="description" content="Panel central DENTAL JG">
 <title>DENTAL JG | Panel central</title>
-<link rel="stylesheet" href="./styles.css?v=10.8.72">
+<link rel="stylesheet" href="./styles.css?v=10.8.73">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -14,7 +14,7 @@
 <div id="login" class="login-wrap">
   <form id="loginForm" class="login-card">
     <div class="login-logo">
-      <img src="./logo-dental-jg.png?v=10.8.72" alt="Logotipo oficial DENTAL JG">
+      <img src="./logo-dental-jg.png?v=10.8.73" alt="Logotipo oficial DENTAL JG">
     </div>
     <p class="eyebrow">SISTEMA INTEGRAL</p>
     <h1>DENTAL <span>JG</span></h1>
@@ -35,7 +35,7 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">
-        <img src="./logo-dental-jg.png?v=10.8.72" alt="Logotipo oficial DENTAL JG">
+        <img src="./logo-dental-jg.png?v=10.8.73" alt="Logotipo oficial DENTAL JG">
       </div>
       <div><b>DENTAL JG</b><small>Panel central</small></div>
     </div>
@@ -46,6 +46,7 @@
     </div>
 
     <nav id="nav" aria-label="Módulos">
+      <button data-view="home" class="nav" type="button"><span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span></button>
       <button data-view="patients" class="nav" type="button">
         <span class="nav-icon" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -95,6 +96,17 @@
     </header>
 
     <div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
+
+    <section id="home" class="view hidden">
+      <div class="panel">
+        <div class="section-head"><div><h3>Panel de control</h3><p>Accesos rápidos a los módulos autorizados de DENTAL JG.</p></div></div>
+        <div class="quick-actions">
+          <button class="primary" type="button" data-open-view="patients">Registro de clientes</button>
+          <button class="primary" type="button" data-open-view="collection">Cobranza y carteras</button>
+          <button class="secondary" type="button" data-open-view="admin">Administración</button>
+        </div>
+      </div>
+    </section>
 
     <section id="patients" class="view hidden">
       <div class="panel">
@@ -264,8 +276,8 @@
   </main>
 </div>
 
-<script src="./config.js?v=10.8.72"></script>
-<script src="./app.js?v=10.8.72"></script>
-<script src="./users.js?v=10.8.72"></script>
+<script src="./config.js?v=10.8.73"></script>
+<script src="./app.js?v=10.8.73"></script>
+<script src="./users.js?v=10.8.73"></script>
 </body>
 </html>
