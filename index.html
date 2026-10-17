@@ -6,36 +6,55 @@
 <meta name="theme-color" content="#073b3a">
 <meta name="description" content="Panel central DENTAL JG">
 <title>DENTAL JG | Panel central</title>
-<link rel="stylesheet" href="./styles.css?v=10.8.73">
+<link rel="stylesheet" href="./styles.css?v=10.8.74">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div id="login" class="login-wrap">
+<section id="appPicker" class="portal-wrap" aria-labelledby="portalTitle">
+  <header class="portal-header">
+    <img class="portal-logo" src="./logo-dental-jg.png?v=10.8.74" alt="Logotipo DENTAL JG">
+    <div class="portal-brand"><p class="eyebrow">PLATAFORMA INTEGRAL</p><h1 id="portalTitle">DENTAL <span>JG</span></h1><p>Selecciona el área a la que deseas ingresar</p></div>
+  </header>
+  <div class="portal-rule"><span></span><p>ACCESO APLICACIONES</p><span></span></div>
+  <div class="app-tiles" role="list" aria-label="Aplicaciones disponibles">
+    <button type="button" class="app-tile" data-select-app="patients" aria-label="Entrar a Registro de clientes">
+      <span class="app-icon icon-registration" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="19" cy="14" r="8"/><path d="M5 40v-4a14 14 0 0 1 28 0v4M37 14v16M29 22h16"/></svg></span>
+      <span class="app-name">Registro de clientes</span><span class="app-description">Altas y expediente de clientes</span><span class="tile-arrow" aria-hidden="true">↗</span>
+    </button>
+    <button type="button" class="app-tile" data-select-app="collection" aria-label="Entrar a Cobranza">
+      <span class="app-icon icon-collection" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="5" y="10" width="38" height="28" rx="5"/><path d="M5 19h38M12 29h10M34 28h1"/><circle cx="34" cy="29" r="4"/></svg></span>
+      <span class="app-name">Cobranza</span><span class="app-description">Pagos, carteras y recibos</span><span class="tile-arrow" aria-hidden="true">↗</span>
+    </button>
+    <button type="button" class="app-tile" data-select-app="admin" aria-label="Entrar a Administración">
+      <span class="app-icon icon-admin" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M20 5h8l1.6 5.4a15 15 0 0 1 4.2 1.8l5.2-2 4 7-4.1 3.7a16 16 0 0 1 0 4.8l4.1 3.7-4 7-5.2-2a15 15 0 0 1-4.2 1.8L28 42h-8l-1.6-5.4a15 15 0 0 1-4.2-1.8l-5.2 2-4-7 4.1-3.7a16 16 0 0 1 0-4.8L5 17.6l4-7 5.2 2a15 15 0 0 1 4.2-1.8z"/><circle cx="24" cy="22" r="6"/></svg></span>
+      <span class="app-name">Administración</span><span class="app-description">Clínicas, usuarios y permisos</span><span class="tile-arrow" aria-hidden="true">↗</span>
+    </button>
+  </div>
+  <p class="portal-footer"><span class="status-dot"></span> Plataforma segura · Acceso según permisos asignados</p>
+</section>
+
+<section id="login" class="login-wrap hidden" aria-labelledby="loginTitle">
+  <button id="backToApps" class="back-to-apps" type="button"><span aria-hidden="true">←</span> Volver a aplicaciones</button>
   <form id="loginForm" class="login-card">
-    <div class="login-logo">
-      <img src="./logo-dental-jg.png?v=10.8.73" alt="Logotipo oficial DENTAL JG">
-    </div>
-    <p class="eyebrow">SISTEMA INTEGRAL</p>
-    <h1>DENTAL <span>JG</span></h1>
-    <p class="muted">Acceso exclusivo para Registro, Cobranza y Administración.</p>
-    <label>Correo de usuario
-      <input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com">
-    </label>
-    <label>Contraseña personal
-      <input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña">
-    </label>
-    <button class="primary" type="submit">Entrar de forma segura</button>
+    <div class="login-logo"><img src="./logo-dental-jg.png?v=10.8.74" alt="Logotipo oficial DENTAL JG"></div>
+    <p class="eyebrow">ACCESO SEGURO</p>
+    <h1 id="loginTitle">Iniciar sesión</h1>
+    <div id="selectedAppBadge" class="selected-app-badge"><span class="selected-app-dot"></span><span id="selectedAppLabel">Aplicación seleccionada</span></div>
+    <p class="muted">Utiliza tu cuenta autorizada de DENTAL JG.</p>
+    <label>Correo de usuario<input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com"></label>
+    <label>Contraseña personal<input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
+    <button class="primary login-submit" type="submit"><span>Entrar de forma segura</span><span aria-hidden="true">↗</span></button>
     <p id="loginMsg" role="status" aria-live="polite"></p>
-    <small>Las cuentas deben estar activas y tener un rol autorizado en Supabase.</small>
+    <small>El acceso depende del rol y de los permisos configurados en Supabase.</small>
   </form>
-</div>
+</section>
 
 <div id="app" class="shell hidden">
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">
-        <img src="./logo-dental-jg.png?v=10.8.73" alt="Logotipo oficial DENTAL JG">
+        <img src="./logo-dental-jg.png?v=10.8.74" alt="Logotipo oficial DENTAL JG">
       </div>
       <div><b>DENTAL JG</b><small>Panel central</small></div>
     </div>
@@ -100,10 +119,9 @@
     <section id="home" class="view hidden">
       <div class="panel">
         <div class="section-head"><div><h3>Panel de control</h3><p>Accesos rápidos a los módulos autorizados de DENTAL JG.</p></div></div>
-        <div class="quick-actions">
-          <button class="primary" type="button" data-open-view="patients">Registro de clientes</button>
-          <button class="primary" type="button" data-open-view="collection">Cobranza y carteras</button>
-          <button class="secondary" type="button" data-open-view="admin">Administración</button>
+        <div class="home-status-grid">
+          <div class="home-status-item"><span class="home-status-mark">✓</span><div><b>Acceso verificado</b><small>Tu sesión y tus permisos están activos.</small></div></div>
+          <div class="home-status-item"><span class="home-status-mark">↻</span><div><b>Datos centralizados</b><small>La información se consulta desde Supabase.</small></div></div>
         </div>
       </div>
     </section>
@@ -276,8 +294,8 @@
   </main>
 </div>
 
-<script src="./config.js?v=10.8.73"></script>
-<script src="./app.js?v=10.8.73"></script>
-<script src="./users.js?v=10.8.73"></script>
+<script src="./config.js?v=10.8.74"></script>
+<script src="./app.js?v=10.8.74"></script>
+<script src="./users.js?v=10.8.74"></script>
 </body>
 </html>
