@@ -81,10 +81,24 @@ async function checkRole() {
   });
 
   if (error) {
-    const detail = data?.error || error.message || "Error desconocido";
+    // Supabase FunctionsHttpError suele guardar el cuerpo JSON de la respuesta
+    // en error.context; leerlo permite mostrar la causa real en vez de solo
+    // "Edge Function returned a non-2xx status code".
+    let detail = data?.error || "";
+    try {
+      const context = error.context;
+      if (!detail && context && typeof context.clone === "function") {
+        const payload = await context.clone().json();
+        detail = payload?.error || payload?.message || "";
+      } else if (!detail && context && typeof context.json === "function") {
+        const payload = await context.json();
+        detail = payload?.error || payload?.message || "";
+      }
+    } catch (_) { /* conserva el mensaje alternativo */ }
+    detail = detail || error.message || "Error desconocido";
     throw new Error(
-      "No se pudieron verificar los permisos en el servidor. Actualiza y despliega la función " +
-      "administrar-usuarios incluida en el ZIP. Detalle: " + detail
+      "No se pudieron verificar los permisos en el servidor. Detalle: " + detail +
+      ". Si el error menciona una tabla o columna, envíame ese texto para ajustar la función sin modificar datos."
     );
   }
 
