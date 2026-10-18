@@ -68,3 +68,15 @@ body{min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#d7f4ed 0,t
  .portal-footer{margin-top:22px;font-size:12px;line-height:1.5}
 }
 @media(max-width:380px){.app-tile{grid-template-columns:58px minmax(0,1fr);column-gap:12px;padding-left:13px;padding-right:38px}.app-icon{width:58px;height:58px;min-width:58px;border-radius:17px}.app-icon svg{width:33px;height:33px}.app-name{font-size:15px}.app-description{font-size:11px}}
+
+/* 10.8.78: cuenta propia de Administración, separada de gestión de usuarios */
+#adminOwnAccountPanel .user-create-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#adminOwnAccountPanel .user-create-action{display:flex;align-items:end}
+.user-message{margin:14px 0;color:#426360;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.user-message.error{color:#a33131}
+#userManagementPanel .user-create-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#userManagementPanel .user-create-action{display:flex;align-items:end}
+#userManagementPanel .user-actions{display:flex;flex-wrap:wrap;gap:7px;min-width:260px}
+#userManagementPanel .user-actions button{font-size:12px;padding:9px 11px}
+#userManagementPanel .danger{background:#fff0ef;color:#a33131}
+@media(max-width:700px){#adminOwnAccountPanel .user-create-grid,#userManagementPanel .user-create-grid{grid-template-columns:minmax(0,1fr)}#userManagementPanel .user-actions{min-width:240px}}
