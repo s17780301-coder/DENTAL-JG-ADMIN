@@ -107,9 +107,73 @@
     `;
     admin.appendChild(panel);
 
+    const accountPanel = document.createElement("div");
+    accountPanel.id = "adminOwnAccountPanel";
+    accountPanel.className = "panel admin-own-account";
+    accountPanel.innerHTML = `
+      <div class="section-head"><div>
+        <h3>Mi cuenta de Administración</h3>
+        <p>Gestiona los datos de tu propia sesión, por separado de las cuentas de otros usuarios.</p>
+      </div></div>
+      <form id="adminOwnAccountForm" class="user-create-grid">
+        <label>Correo actual <input id="adminCurrentEmail" type="email" readonly autocomplete="username"></label>
+        <label>Nuevo correo electrónico (opcional) <input id="adminNewEmail" type="email" maxlength="254" autocomplete="email" placeholder="Dejar vacío para conservarlo"></label>
+        <label>Nueva contraseña (opcional) <input id="adminNewPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></label>
+        <label>Confirmar nueva contraseña <input id="adminConfirmPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password"></label>
+        <div class="user-create-action"><button id="saveAdminAccount" class="primary" type="submit">Guardar cambios de mi cuenta</button></div>
+      </form>
+      <p class="muted">Si cambias el correo, Supabase puede pedir confirmación por correo electrónico. La contraseña nunca se muestra ni se recupera en texto legible.</p>
+      <div id="adminAccountMessage" class="user-message" role="status" aria-live="polite"></div>
+    `;
+    admin.appendChild(accountPanel);
+    $("adminOwnAccountForm").addEventListener("submit", saveOwnAccount);
+
     $("createUserForm").addEventListener("submit", createUser);
     $("refreshUsers").addEventListener("click", () => loadUsers());
     $("userAdminRows").addEventListener("click", userAction);
+  }
+
+  function accountSay(text, error = false) {
+    const el = $("adminAccountMessage");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "user-message" + (error ? " error" : "");
+  }
+
+  async function refreshOwnAccount() {
+    if (!db) return;
+    const { data, error } = await db.auth.getUser();
+    if (error) { accountSay("No se pudieron consultar los datos de la sesión: " + error.message, true); return; }
+    const email = data?.user?.email || "";
+    if ($("adminCurrentEmail")) $("adminCurrentEmail").value = email;
+  }
+
+  async function saveOwnAccount(event) {
+    event.preventDefault();
+    const newEmail = $("adminNewEmail").value.trim().toLowerCase();
+    const password = $("adminNewPassword").value;
+    const confirmPassword = $("adminConfirmPassword").value;
+    const button = $("saveAdminAccount");
+    if (!newEmail && !password) { accountSay("Escribe un nuevo correo o una nueva contraseña para guardar cambios.", true); return; }
+    if (password && password.length < 8) { accountSay("La contraseña debe tener al menos 8 caracteres.", true); return; }
+    if (password !== confirmPassword) { accountSay("Las contraseñas no coinciden.", true); return; }
+    if (!confirm("¿Confirmas actualizar los datos de tu propia cuenta de Administración?")) return;
+    button.disabled = true;
+    accountSay("Guardando cambios de la cuenta…");
+    try {
+      const changes = {};
+      if (newEmail) changes.email = newEmail;
+      if (password) changes.password = password;
+      const { data, error } = await db.auth.updateUser(changes);
+      if (error) throw error;
+      $("adminNewEmail").value = "";
+      $("adminNewPassword").value = "";
+      $("adminConfirmPassword").value = "";
+      if (data?.user?.email) $("adminCurrentEmail").value = data.user.email;
+      accountSay(newEmail ? "Solicitud guardada. Si Supabase requiere confirmar el nuevo correo, revisa tu bandeja de entrada." : "Contraseña actualizada correctamente.");
+    } catch (e) {
+      accountSay("No se pudieron guardar los cambios: " + (e.message || "Error desconocido."), true);
+    } finally { button.disabled = false; }
   }
 
   function isActive(u) {
@@ -306,13 +370,24 @@
         .select("role")
         .eq("user_id", session.user.id);
 
+      if (roleError) {
+        console.error("No se pudo comprobar el rol de Administración:", roleError);
+        const adminRoot = $("admin");
+        if (adminRoot) {
+          let warning = $("userRoleCheckWarning");
+          if (!warning) { warning = document.createElement("p"); warning.id = "userRoleCheckWarning"; warning.className = "user-message error"; warning.setAttribute("role", "alert"); adminRoot.appendChild(warning); }
+          warning.textContent = "No se pudo comprobar el rol desde app_user_roles. La gestión de usuarios queda bloqueada por seguridad; revisa el error de consulta en Supabase.";
+        }
+        return;
+      }
       const isAdmin = (roleRows || []).some(row =>
         String(row.role || "").trim().toLowerCase() === "admin"
       );
-      if (roleError || !isAdmin) return;
+      if (!isAdmin) return;
 
       activeUserId = session.user.id;
       addPanel();
+      await refreshOwnAccount();
       await loadUsers();
     } catch (e) {
       console.error("Gestión de usuarios:", e);
