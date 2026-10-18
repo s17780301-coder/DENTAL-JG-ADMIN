@@ -199,19 +199,21 @@
     body.innerHTML = users.map(u => {
       const id = String(u.id || u.user_id || "");
       const email = String(u.email || "");
-      const role = String(
-        u.role || u.role_name || u.app_role || ""
-      ).toLowerCase();
+      const roles = Array.isArray(u.roles) && u.roles.length
+        ? u.roles.map(r => String(r).trim().toLowerCase()).filter(Boolean)
+        : [String(u.role || u.role_name || u.app_role || "").toLowerCase()].filter(Boolean);
+      const role = roles[0] || "";
+      const roleLabel = roles.map(r => ({admin:"Administración", cobranza:"Cobranza", registro:"Registro"}[r] || r)).join(" + ");
       const active = isActive(u);
 
       return `<tr data-user-id="${esc(id)}">
         <td>${esc(email || "Sin correo")}</td>
-        <td><select class="edit-user-role" aria-label="Rol para ${esc(email)}">
+        <td><span class="role-current">${esc(roleLabel || "Sin rol")}</span><select class="edit-user-role" aria-label="Nuevo rol principal para ${esc(email)}">
           <option value="registro" ${role === "registro" ? "selected" : ""}>Registro</option>
           <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>Cobranza</option>
           <option value="admin" ${role === "admin" ? "selected" : ""}>Administración</option>
         </select></td>
-        <td>${active ? "Activo" : "Inactivo"}</td>
+        <td><span class="status-pill ${active ? "is-active" : "is-inactive"}">${active ? "Activo" : "Inactivo"}</span></td>
         <td><div class="user-actions">
           <button type="button" class="secondary"
             data-action="role" data-id="${esc(id)}">Guardar rol</button>
@@ -365,30 +367,23 @@
         return;
       }
 
-      const { data: roleRows, error: roleError } = await db
-        .from("app_user_roles")
-        .select("role")
-        .eq("user_id", session.user.id);
-
-      if (roleError) {
-        console.error("No se pudo comprobar el rol de Administración:", roleError);
-        const adminRoot = $("admin");
-        if (adminRoot) {
-          let warning = $("userRoleCheckWarning");
-          if (!warning) { warning = document.createElement("p"); warning.id = "userRoleCheckWarning"; warning.className = "user-message error"; warning.setAttribute("role", "alert"); adminRoot.appendChild(warning); }
-          warning.textContent = "No se pudo comprobar el rol desde app_user_roles. La gestión de usuarios queda bloqueada por seguridad; revisa el error de consulta en Supabase.";
-        }
-        return;
-      }
-      const isAdmin = (roleRows || []).some(row =>
-        String(row.role || "").trim().toLowerCase() === "admin"
-      );
-      if (!isAdmin) return;
-
+      // No consultar app_user_roles desde el navegador: en instalaciones con RLS
+      // esa lectura puede fallar aunque el usuario sea administrador. La función
+      // valida el token y el rol usando la clave de servicio en el servidor.
       activeUserId = session.user.id;
       addPanel();
       await refreshOwnAccount();
-      await loadUsers();
+      const authorized = await loadUsers();
+      if (!authorized) {
+        // La lista no se habilita si el servidor rechaza el rol. La comprobación
+        // de autorización sigue siendo obligatoria en cada operación sensible.
+        activeUserId = null;
+        const panel = $("userManagementPanel");
+        if (panel) panel.dataset.authorization = "denied";
+      } else {
+        const panel = $("userManagementPanel");
+        if (panel) panel.dataset.authorization = "verified";
+      }
     } catch (e) {
       console.error("Gestión de usuarios:", e);
       say("Error al iniciar gestión de usuarios: " + e.message, true);
