@@ -74,36 +74,22 @@ const roleMap = {
   registro_clientes: "registro"
 };
 
-/* Los roles se consultan en servidor; el navegador no lee app_user_roles directamente. */
+/* app_user_roles puede contener varias filas por usuario. */
 async function checkRole() {
-  const { data, error } = await db.functions.invoke("administrar-usuarios", {
-    body: { action: "my_roles" }
-  });
+  const { data, error } = await db
+    .from("app_user_roles")
+    .select("role")
+    .eq("user_id", user.id);
 
   if (error) {
-    // Supabase FunctionsHttpError suele guardar el cuerpo JSON de la respuesta
-    // en error.context; leerlo permite mostrar la causa real en vez de solo
-    // "Edge Function returned a non-2xx status code".
-    let detail = data?.error || "";
-    try {
-      const context = error.context;
-      if (!detail && context && typeof context.clone === "function") {
-        const payload = await context.clone().json();
-        detail = payload?.error || payload?.message || "";
-      } else if (!detail && context && typeof context.json === "function") {
-        const payload = await context.json();
-        detail = payload?.error || payload?.message || "";
-      }
-    } catch (_) { /* conserva el mensaje alternativo */ }
-    detail = detail || error.message || "Error desconocido";
     throw new Error(
-      "No se pudieron verificar los permisos en el servidor. Detalle: " + detail +
-      ". Si el error menciona una tabla o columna, envíame ese texto para ajustar la función sin modificar datos."
+      "No se pudieron verificar los permisos en app_user_roles: " +
+      error.message
     );
   }
 
-  const roles = (Array.isArray(data?.roles) ? data.roles : [])
-    .map(value => roleMap[String(value || "").toLowerCase().trim()])
+  const roles = (data || [])
+    .map(row => roleMap[String(row.role || "").toLowerCase().trim()])
     .filter(Boolean);
 
   role = roles.includes("admin") ? "admin" :
