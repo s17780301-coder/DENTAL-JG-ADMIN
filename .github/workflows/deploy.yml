@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "DENTAL_JG_PANEL_10_8_93_DIAGNOSTICO_ROLES_TURQUESA.zip"
+      - "*.zip"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -16,7 +16,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: github-pages
   cancel-in-progress: true
 
 jobs:
@@ -31,94 +31,64 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Comprobar y extraer ZIP
+      - name: Buscar y extraer ZIP
         shell: bash
         run: |
           set -euo pipefail
-
-          ZIP="DENTAL_JG_PANEL_10_8_93_DIAGNOSTICO_ROLES_TURQUESA.zip"
-
-          echo "Directorio de trabajo:"
-          pwd
-
-          echo "Archivos disponibles:"
-          ls -lah
-
-          if [ ! -f "$ZIP" ]; then
-            echo "::error::No se encontró el archivo $ZIP"
-            exit 1
-          fi
 
           mkdir -p extracted public
 
+          ZIP="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+
+          if [ -z "$ZIP" ]; then
+            echo "::error::No hay ningún ZIP en la raíz del repositorio."
+            echo "Sube primero el ZIP del panel DENTAL JG."
+            exit 1
+          fi
+
+          echo "ZIP encontrado: $ZIP"
           unzip -oq "$ZIP" -d extracted
-
-          echo "Contenido extraído:"
-          find extracted -type f -print
-
-      - name: Preparar archivos del panel
-        shell: bash
-        run: |
-          set -euo pipefail
 
           INDEX="$(find extracted -type f -name index.html -print -quit)"
 
           if [ -z "$INDEX" ]; then
-            echo "::error::No se encontró index.html dentro del ZIP."
+            echo "::error::El ZIP no contiene index.html."
+            echo "Contenido del ZIP:"
+            find extracted -maxdepth 5 -type f -print | head -n 150
             exit 1
           fi
 
           PANEL_DIR="$(dirname "$INDEX")"
-
           echo "Carpeta del panel: $PANEL_DIR"
 
-          for file in \
-            index.html \
-            styles.css \
-            app.js \
-            config.js \
-            users.js \
-            logo-dental-jg.png
-          do
-            if [ ! -f "$PANEL_DIR/$file" ]; then
-              echo "::error::Falta el archivo $file en $PANEL_DIR"
-              exit 1
-            fi
+          cp -a "$PANEL_DIR"/. public/
 
-            cp "$PANEL_DIR/$file" public/
-            echo "Copiado: $file"
-          done
-
-          if [ -d "$PANEL_DIR/assets" ]; then
-            cp -R "$PANEL_DIR/assets" public/
+          if [ ! -s public/index.html ]; then
+            echo "::error::No se encontró un index.html válido para publicar."
+            exit 1
           fi
 
+          touch public/.nojekyll
+
           echo "Archivos preparados:"
-          ls -lah public
+          find public -maxdepth 3 -type f -print | head -n 150
 
-          test -s public/index.html
-          test -s public/styles.css
-          test -s public/app.js
-          test -s public/config.js
-          test -s public/users.js
-          test -s public/logo-dental-jg.png
-
-      - name: Cargar artefacto de GitHub Pages
+      - name: Subir artefacto de GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
     name: Publicar en GitHub Pages
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
 
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Publicar sitio
+      - name: Desplegar sitio
         id: deployment
         uses: actions/deploy-pages@v4
         
