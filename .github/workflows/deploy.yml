@@ -1,4 +1,33 @@
 
+name: Publicar panel DENTAL JG
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
       - name: Descargar y preparar panel
         shell: bash
         run: |
@@ -6,28 +35,27 @@
 
           mkdir -p extracted public
 
-          API_URL="https://api.github.com/repos/s17780301-coder/Gestor-aAsistente/contents/DENTAL_JG_PANEL_10_8_95_TURQUESA_CACH%25C3%2589_CORREGIDA.zip?ref=main"
+          API_URL="https://api.github.com/repos/s17780301-coder/Gestor-aAsistente/contents/DENTAL_JG_PANEL_10_8_95_TURQUESA_CACH%C3%89_CORREGIDA.zip?ref=main"
 
-          echo "Descargando ZIP del panel mediante GitHub API..."
+          echo "Descargando ZIP del panel..."
           curl -fLsS --retry 3 \
             -H "Accept: application/vnd.github+json" \
             "$API_URL" -o respuesta.json
 
-          echo "Comprobando respuesta de GitHub..."
+          echo "Validando respuesta..."
           jq -e '.encoding == "base64" and (.content | length > 0)' respuesta.json >/dev/null
 
           jq -r '.content' respuesta.json | base64 -d > panel.zip
 
-          test -s panel.zip
-          echo "Validando archivo ZIP..."
+          echo "Validando ZIP..."
           unzip -tq panel.zip
           unzip -oq panel.zip -d extracted
 
           INDEX="$(find extracted -type f -name index.html -print -quit)"
 
           if [ -z "$INDEX" ]; then
-            echo "::error::El ZIP descargado no contiene index.html."
-            find extracted -maxdepth 5 -type f | head -n 150
+            echo "::error::El ZIP no contiene index.html."
+            find extracted -maxdepth 5 -type f | head -n 100
             exit 1
           fi
 
@@ -37,6 +65,22 @@
           test -s public/index.html
           touch public/.nojekyll
 
-          echo "Panel preparado correctamente:"
+          echo "Archivos listos para publicar:"
           find public -maxdepth 3 -type f | head -n 100
-          
+
+      - name: Subir archivos de GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar panel
+        id: deployment
+        uses: actions/deploy-pages@v4
+        
