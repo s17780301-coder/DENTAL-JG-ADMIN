@@ -208,11 +208,11 @@
 
       return `<tr data-user-id="${esc(id)}">
         <td>${esc(email || "Sin correo")}</td>
-        <td><span class="role-current">${esc(roleLabel || "Sin rol")}</span><select class="edit-user-role" aria-label="Nuevo rol principal para ${esc(email)}">
-          <option value="registro" ${role === "registro" ? "selected" : ""}>Registro</option>
-          <option value="cobranza" ${role === "cobranza" ? "selected" : ""}>Cobranza</option>
-          <option value="admin" ${role === "admin" ? "selected" : ""}>Administración</option>
-        </select></td>
+        <td><span class="role-current">${esc(roleLabel || "Sin rol")}</span><div class="edit-user-roles" aria-label="Roles para ${esc(email)}">
+          <label><input type="checkbox" value="registro" ${roles.includes("registro") ? "checked" : ""}> Registro</label>
+          <label><input type="checkbox" value="cobranza" ${roles.includes("cobranza") ? "checked" : ""}> Cobranza</label>
+          <label><input type="checkbox" value="admin" ${roles.includes("admin") ? "checked" : ""}> Administración</label>
+        </div></td>
         <td><span class="status-pill ${active ? "is-active" : "is-inactive"}">${active ? "Activo" : "Inactivo"}</span></td>
         <td><div class="user-actions">
           <button type="button" class="secondary"
@@ -296,11 +296,15 @@
       button.disabled = true;
 
       if (action === "role") {
-        const role = row.querySelector(".edit-user-role").value;
-        if (!confirm("¿Confirmas cambiar el rol de esta cuenta?")) return;
-        say("Guardando rol…");
-        await invoke("set_role", { user_id: id, role });
-        const refreshed = await loadUsers("Rol actualizado correctamente.");
+        const roles = [...row.querySelectorAll(".edit-user-roles input:checked")].map(input => input.value);
+        if (!roles.length) {
+          say("Selecciona al menos un rol para no dejar la cuenta sin permisos.", true);
+          return;
+        }
+        if (!confirm("¿Confirmas guardar los roles seleccionados? Los roles desmarcados se retirarán.")) return;
+        say("Guardando roles…");
+        await invoke("set_roles", { user_id: id, roles });
+        const refreshed = await loadUsers("Roles actualizados correctamente.");
         if (!refreshed) say("El rol se guardó, pero no se pudo actualizar la lista.", true);
       } else if (action === "active") {
         const active = button.dataset.active !== "true";
