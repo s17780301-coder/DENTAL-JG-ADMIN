@@ -74,22 +74,22 @@ const roleMap = {
   registro_clientes: "registro"
 };
 
-/* Los roles se consultan en servidor; el navegador no lee app_user_roles directamente. */
+/* app_user_roles puede contener varias filas por usuario. */
 async function checkRole() {
-  const { data, error } = await db.functions.invoke("administrar-usuarios", {
-    body: { action: "my_roles" }
-  });
+  const { data, error } = await db
+    .from("app_user_roles")
+    .select("role")
+    .eq("user_id", user.id);
 
   if (error) {
-    const detail = data?.error || error.message || "Error desconocido";
     throw new Error(
-      "No se pudieron verificar los permisos en el servidor. Actualiza y despliega la función " +
-      "administrar-usuarios incluida en el ZIP. Detalle: " + detail
+      "No se pudieron verificar los permisos en app_user_roles: " +
+      error.message
     );
   }
 
-  const roles = (Array.isArray(data?.roles) ? data.roles : [])
-    .map(value => roleMap[String(value || "").toLowerCase().trim()])
+  const roles = (data || [])
+    .map(row => roleMap[String(row.role || "").toLowerCase().trim()])
     .filter(Boolean);
 
   role = roles.includes("admin") ? "admin" :
