@@ -1,0 +1,81 @@
+name: Descomprimir ZIP y publicar archivos
+
+on:
+  workflow_dispatch:
+    inputs:
+      zip_path:
+        description: "Ruta del ZIP dentro del repositorio (ej. paquetes/clinica-dental.zip)"
+        required: true
+        type: string
+      destino:
+        description: "Carpeta de destino (usa . para la raíz del repositorio)"
+        required: true
+        default: "."
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: descomprimir-zip
+  cancel-in-progress: false
+
+jobs:
+  descomprimir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar y descomprimir ZIP
+        env:
+          ZIP_PATH: ${{ inputs.zip_path }}
+          DESTINO: ${{ inputs.destino }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$ZIP_PATH" ]]; then
+            echo "::error::No existe el ZIP: $ZIP_PATH"
+            echo "Primero sube el archivo ZIP al repositorio y vuelve a ejecutar el flujo."
+            exit 1
+          fi
+          if [[ "$ZIP_PATH" != *.zip ]]; then
+            echo "::error::El archivo indicado debe terminar en .zip"
+            exit 1
+          fi
+          if [[ "$DESTINO" == /* || "$DESTINO" == *".."* ]]; then
+            echo "::error::Destino no permitido. Usa . o una carpeta dentro del repositorio."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/zip-extraido"
+          unzip -q "$ZIP_PATH" -d "$RUNNER_TEMP/zip-extraido"
+          shopt -s dotglob nullglob
+          elementos=("$RUNNER_TEMP/zip-extraido"/*)
+          if [[ ${#elementos[@]} -eq 1 && -d "${elementos[0]}" ]]; then
+            ORIGEN="${elementos[0]}"
+          else
+            ORIGEN="$RUNNER_TEMP/zip-extraido"
+          fi
+          if [[ "$DESTINO" == "." ]]; then
+            rsync -a --exclude='.git/' --exclude='.github/' "$ORIGEN"/ ./
+          else
+            mkdir -p "$DESTINO"
+            rsync -a "$ORIGEN"/ "$DESTINO"/
+          fi
+          echo "ZIP descomprimido en: $DESTINO"
+
+      - name: Guardar cambios en GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No hay cambios que guardar."
+          else
+            git commit -m "Descomprimir ZIP y actualizar archivos"
+            git push
+          fi
