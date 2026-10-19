@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "DENTAL_JG_PANEL_10_8_92_REPARACION_CARGA_USUARIOS_4.zip"
+      - "DENTAL_JG_PANEL_10_8_93_DIAGNOSTICO_ROLES_TURQUESA.zip"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -36,17 +36,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          ZIP="DENTAL_JG_PANEL_10_8_92_REPARACION_CARGA_USUARIOS_4.zip"
+          ZIP="DENTAL_JG_PANEL_10_8_93_DIAGNOSTICO_ROLES_TURQUESA.zip"
 
           echo "Directorio de trabajo:"
           pwd
 
-          echo "Contenido del repositorio:"
-          ls -la
+          echo "Archivos disponibles:"
+          ls -lah
 
           if [ ! -f "$ZIP" ]; then
-            echo "::error::No se encontró el ZIP: $ZIP"
-            echo "Comprueba que esté en la raíz del repositorio."
+            echo "::error::No se encontró el archivo $ZIP"
             exit 1
           fi
 
@@ -54,7 +53,7 @@ jobs:
 
           unzip -oq "$ZIP" -d extracted
 
-          echo "Archivos encontrados dentro del ZIP:"
+          echo "Contenido extraído:"
           find extracted -type f -print
 
       - name: Preparar archivos del panel
@@ -71,8 +70,7 @@ jobs:
 
           PANEL_DIR="$(dirname "$INDEX")"
 
-          echo "Carpeta del panel encontrada:"
-          echo "$PANEL_DIR"
+          echo "Carpeta del panel: $PANEL_DIR"
 
           for file in \
             index.html \
@@ -83,8 +81,7 @@ jobs:
             logo-dental-jg.png
           do
             if [ ! -f "$PANEL_DIR/$file" ]; then
-              echo "::error::Falta el archivo requerido: $file"
-              echo "Ubicación comprobada: $PANEL_DIR/$file"
+              echo "::error::Falta el archivo $file en $PANEL_DIR"
               exit 1
             fi
 
@@ -92,11 +89,11 @@ jobs:
             echo "Copiado: $file"
           done
 
-          if [ -d "$PANEL_DIR/supabase" ]; then
-            cp -R "$PANEL_DIR/supabase" public/
+          if [ -d "$PANEL_DIR/assets" ]; then
+            cp -R "$PANEL_DIR/assets" public/
           fi
 
-          echo "Archivos listos para publicar:"
+          echo "Archivos preparados:"
           ls -lah public
 
           test -s public/index.html
@@ -106,7 +103,7 @@ jobs:
           test -s public/users.js
           test -s public/logo-dental-jg.png
 
-      - name: Verificar configuración de Pages
+      - name: Cargar artefacto de GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
