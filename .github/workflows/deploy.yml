@@ -21,6 +21,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -35,17 +36,27 @@ jobs:
 
           mkdir -p extracted public
 
-          API_URL="https://api.github.com/repos/s17780301-coder/Gestor-aAsistente/contents/DENTAL_JG_PANEL_10_8_95_TURQUESA_CACH%C3%89_CORREGIDA.zip?ref=main"
+          API_URL="https://api.github.com/repos/s17780301-coder/Gestor-aAsistente/contents/DENTAL_JG_PANEL_10_8_95_TURQUESA_CACH%25C3%2589_CORREGIDA.zip?ref=main"
 
-          echo "Descargando ZIP del panel..."
-          curl -fLsS --retry 3 \
+          echo "Descargando archivo del panel..."
+          curl --fail --location --silent --show-error \
+            --retry 3 \
             -H "Accept: application/vnd.github+json" \
-            "$API_URL" -o respuesta.json
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$API_URL" \
+            --output respuesta.json
 
-          echo "Validando respuesta..."
-          jq -e '.encoding == "base64" and (.content | length > 0)' respuesta.json >/dev/null
+          echo "Comprobando respuesta de GitHub..."
+          jq -e '
+            .encoding == "base64" and
+            (.content | type == "string") and
+            (.content | length > 0)
+          ' respuesta.json >/dev/null
 
-          jq -r '.content' respuesta.json | base64 -d > panel.zip
+          jq -r '.content' respuesta.json |
+            base64 --decode > panel.zip
+
+          test -s panel.zip
 
           echo "Validando ZIP..."
           unzip -tq panel.zip
@@ -65,10 +76,10 @@ jobs:
           test -s public/index.html
           touch public/.nojekyll
 
-          echo "Archivos listos para publicar:"
+          echo "Comprobando archivos web..."
           find public -maxdepth 3 -type f | head -n 100
 
-      - name: Subir archivos de GitHub Pages
+      - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
@@ -76,11 +87,13 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - name: Publicar panel
+      - name: Publicar página
         id: deployment
         uses: actions/deploy-pages@v4
         
