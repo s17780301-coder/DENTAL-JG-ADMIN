@@ -2,13 +2,12 @@
 name: Publicar panel DENTAL JG
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - "*.zip"
       - ".github/workflows/deploy.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,74 +20,59 @@ concurrency:
 
 jobs:
   build:
-    name: Preparar panel web
     runs-on: ubuntu-latest
-
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar GitHub Pages
+      - name: Configurar Pages
         uses: actions/configure-pages@v5
 
-      - name: Buscar y extraer ZIP
+      - name: Descargar y preparar panel
         shell: bash
         run: |
           set -euo pipefail
 
           mkdir -p extracted public
 
-          ZIP="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+          URL="https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/DENTAL_JG_PANEL_10_8_95_TURQUESA_CACH%C3%89_CORREGIDA.zip"
 
-          if [ -z "$ZIP" ]; then
-            echo "::error::No hay ningún ZIP en la raíz del repositorio."
-            echo "Sube primero el ZIP del panel DENTAL JG."
-            exit 1
-          fi
+          echo "Descargando ZIP del panel..."
+          curl -fL --retry 3 "$URL" -o panel.zip
 
-          echo "ZIP encontrado: $ZIP"
-          unzip -oq "$ZIP" -d extracted
+          unzip -tq panel.zip
+          unzip -oq panel.zip -d extracted
 
           INDEX="$(find extracted -type f -name index.html -print -quit)"
 
           if [ -z "$INDEX" ]; then
-            echo "::error::El ZIP no contiene index.html."
-            echo "Contenido del ZIP:"
-            find extracted -maxdepth 5 -type f -print | head -n 150
+            echo "::error::El ZIP descargado no contiene index.html."
+            find extracted -maxdepth 5 -type f | head -n 150
             exit 1
           fi
 
           PANEL_DIR="$(dirname "$INDEX")"
-          echo "Carpeta del panel: $PANEL_DIR"
-
           cp -a "$PANEL_DIR"/. public/
 
-          if [ ! -s public/index.html ]; then
-            echo "::error::No se encontró un index.html válido para publicar."
-            exit 1
-          fi
-
+          test -s public/index.html
           touch public/.nojekyll
 
           echo "Archivos preparados:"
-          find public -maxdepth 3 -type f -print | head -n 150
+          find public -maxdepth 3 -type f | head -n 100
 
-      - name: Subir artefacto de GitHub Pages
+      - name: Subir artefacto
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
-    name: Publicar en GitHub Pages
     needs: build
     runs-on: ubuntu-latest
-
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Desplegar sitio
+      - name: Publicar sitio
         id: deployment
         uses: actions/deploy-pages@v4
         
