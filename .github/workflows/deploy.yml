@@ -1,29 +1,51 @@
+
 name: Publicar panel DENTAL JG
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: pages
   cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
-      - name: Preparar sitio
+
+      - name: Extraer y preparar panel web
         run: |
-          mkdir -p public
-          cp index.html styles.css app.js config.js users.js logo-dental-jg.png public/
+          set -euo pipefail
+          ZIP="DENTAL_JG_PANEL_10_8_92_REPARACION_CARGA_USUARIOS_4.zip"
+          test -f "$ZIP"
+          mkdir -p extracted public
+          unzip -q "$ZIP" -d extracted
+          INDEX="$(find extracted -type f -name index.html -print -quit)"
+          test -n "$INDEX"
+          PANEL_DIR="$(dirname "$INDEX")"
+
+          for file in index.html styles.css app.js config.js users.js logo-dental-jg.png; do
+            test -f "$PANEL_DIR/$file"
+            cp "$PANEL_DIR/$file" public/
+          done
+
+          test -f public/index.html
+          ls -la public
+
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
+
   deploy:
     environment:
       name: github-pages
@@ -34,3 +56,4 @@ jobs:
       - name: Publicar GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        
