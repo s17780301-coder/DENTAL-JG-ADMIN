@@ -1,29 +1,60 @@
 name: Publicar panel DENTAL JG
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: pages
   cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
-      - name: Preparar sitio
+
+      - name: Localizar y preparar archivos del portal
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p public
-          cp index.html styles.css app.js config.js users.js logo-dental-jg.png public/
+
+          # Busca una carpeta que contenga TODOS los archivos requeridos.
+          PANEL_DIR=""
+          while IFS= read -r -d '' candidate; do
+            dir="$(dirname "$candidate")"
+            if [[ -f "$dir/index.html" && -f "$dir/styles.css" && -f "$dir/app.js" && -f "$dir/config.js" && -f "$dir/users.js" && -f "$dir/logo-dental-jg.png" ]]; then
+              PANEL_DIR="$dir"
+              break
+            fi
+          done < <(find . -type f -name index.html -not -path './.git/*' -print0)
+
+          if [[ -z "$PANEL_DIR" ]]; then
+            echo 'ERROR: No se encontró una carpeta que contenga index.html, styles.css, app.js, config.js, users.js y logo-dental-jg.png.'
+            echo 'Archivos index.html localizados:'
+            find . -type f -name index.html -not -path './.git/*' -print || true
+            echo 'Archivos del repositorio (primeros 200):'
+            find . -type f -not -path './.git/*' | sort | head -200
+            exit 1
+          fi
+
+          echo "Portal localizado en: $PANEL_DIR"
+          cp "$PANEL_DIR/index.html" "$PANEL_DIR/styles.css" "$PANEL_DIR/app.js" "$PANEL_DIR/config.js" "$PANEL_DIR/users.js" "$PANEL_DIR/logo-dental-jg.png" public/
+          ls -la public
+
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
+
   deploy:
     environment:
       name: github-pages
