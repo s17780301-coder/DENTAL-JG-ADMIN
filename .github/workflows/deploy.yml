@@ -32,6 +32,7 @@ jobs:
 
           if [[ "$root_ready" == true ]]; then
             echo "Usando archivos del panel ubicados en la raíz del repositorio."
+            panel_dir="."
             cp "${required[@]}" public/
           else
             # No depender de un nombre fijo de ZIP: detectar cualquier ZIP del repositorio
@@ -73,6 +74,21 @@ jobs:
             cp "$panel_dir"/{index.html,styles.css,app.js,config.js,users.js,logo-dental-jg.png} public/
           fi
 
+          # Conservar la función del servidor para publicarla por separado en Supabase.
+          if [[ -s "$panel_dir/supabase/functions/administrar-usuarios/index.ts" ]]; then
+            mkdir -p supabase/functions/administrar-usuarios
+            cp "$panel_dir/supabase/functions/administrar-usuarios/index.ts" supabase/functions/administrar-usuarios/index.ts
+            cat > supabase/config.toml <<'TOML'
+          project_id = "nfwhymppyzoriihdwlyc"
+
+          [functions.administrar-usuarios]
+          verify_jwt = true
+          TOML
+            echo "Función Edge administrar-usuarios preparada para Supabase."
+          else
+            echo "::warning::El paquete no contiene supabase/functions/administrar-usuarios/index.ts."
+          fi
+
           # Mostrar el error real de Supabase al iniciar sesión; no modificar usuarios ni contraseñas.
           python3 - <<'PY'
           from pathlib import Path
@@ -90,6 +106,25 @@ jobs:
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
+
+      - name: Instalar CLI de Supabase
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && hashFiles('supabase/functions/administrar-usuarios/index.ts') != '' }}
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Publicar función Edge administrar-usuarios en Supabase
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && hashFiles('supabase/functions/administrar-usuarios/index.ts') != '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase functions deploy administrar-usuarios --project-ref nfwhymppyzoriihdwlyc --use-api
+
+      - name: Aviso si falta el token privado de Supabase
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          echo "::warning::El panel web se publicará, pero falta el secreto SUPABASE_ACCESS_TOKEN en GitHub para actualizar la función Edge de Supabase."
 
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
