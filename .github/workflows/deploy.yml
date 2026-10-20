@@ -73,6 +73,20 @@ jobs:
             cp "$panel_dir"/{index.html,styles.css,app.js,config.js,users.js,logo-dental-jg.png} public/
           fi
 
+          # Mostrar el error real de Supabase al iniciar sesión; no modificar usuarios ni contraseñas.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("public/app.js")
+          s = p.read_text()
+          old = 'throw new Error("No se pudo iniciar sesión. Verifica correo, contraseña y estado de la cuenta.");'
+          new = 'throw new Error("No se pudo iniciar sesión: " + (error.message || "Supabase no devolvió detalles. Verifica las credenciales y el estado de la cuenta."));'
+          if old in s:
+              p.write_text(s.replace(old, new, 1))
+              print("Diagnóstico de inicio de sesión habilitado.")
+          else:
+              print("Aviso: no se encontró la cadena de error esperada; se conserva app.js sin cambios.")
+          PY
+
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
