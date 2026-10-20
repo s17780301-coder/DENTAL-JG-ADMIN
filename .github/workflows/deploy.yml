@@ -1,14 +1,12 @@
-
-name: Publicar panel DENTAL JG
+name: Publicar panel DENTAL JG (restauración 10.8.91)
 
 'on':
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - '.github/workflows/deploy.yml'
-      - 'DENTAL_JG_PANEL*.zip'
+      - 'DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip'
 
 permissions:
   contents: read
@@ -25,61 +23,35 @@ jobs:
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
-
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
-
-      - name: Validar y preparar panel
+      - name: Validar y preparar panel restaurado
         shell: bash
         run: |
           set -euo pipefail
+          ZIP='DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip'
+          test -s "$ZIP" || { echo '::error::Falta el ZIP maestro 10.8.91'; exit 1; }
+          unzip -tq "$ZIP"
           mkdir -p extracted public
-
-          PANEL_ZIP=""
-          for candidate in \
-            "DENTAL_JG_PANEL_10_8_99_DESPLIEGUE_CORREGIDO.zip" \
-            "DENTAL_JG_PANEL_10_8_98_SEGURIDAD_DUPLICADOS.zip" \
-            "DENTAL_JG_PANEL_10_8_97_REVISION_COMPLETA_JS_DESPLIEGUE.zip" \
-            "DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip"
-          do
-            if [ -s "$candidate" ]; then
-              PANEL_ZIP="$candidate"
-              break
-            fi
+          unzip -oq "$ZIP" -d extracted
+          mapfile -t INDEX_FILES < <(find extracted -type f -name index.html -print)
+          if [ "${#INDEX_FILES[@]}" -ne 1 ]; then
+            echo "::error::Se esperaba un index.html; encontrados: ${#INDEX_FILES[@]}"
+            printf '%s\n' "${INDEX_FILES[@]}"
+            exit 1
+          fi
+          PANEL_DIR="$(dirname "${INDEX_FILES[0]}")"
+          for f in index.html app.js config.js styles.css users.js logo-dental-jg.png; do
+            test -s "$PANEL_DIR/$f" || { echo "::error::Falta $f en el paquete"; exit 1; }
           done
-
-          if [ -z "$PANEL_ZIP" ]; then
-            PANEL_ZIP="$(find . -maxdepth 1 -type f \
-              -iname 'DENTAL_JG_PANEL*.zip' \
-              -print | sort -r | head -n 1 || true)"
-          fi
-
-          if [ -z "$PANEL_ZIP" ] || [ ! -s "$PANEL_ZIP" ]; then
-            echo "::error::No se encontró el ZIP del panel en la raíz."
-            find . -maxdepth 1 -type f -iname '*.zip' -print
-            exit 1
-          fi
-
-          echo "ZIP seleccionado: $PANEL_ZIP"
-          unzip -tq "$PANEL_ZIP"
-          unzip -oq "$PANEL_ZIP" -d extracted
-
-          INDEX="$(find extracted -type f -name index.html -print -quit)"
-          if [ -z "$INDEX" ]; then
-            echo "::error::El ZIP no contiene index.html"
-            exit 1
-          fi
-
-          PANEL_DIR="$(dirname "$INDEX")"
           cp -a "$PANEL_DIR"/. public/
-          test -s public/index.html
           touch public/.nojekyll
-
+          echo 'Archivos web listos:'
+          find public -maxdepth 2 -type f -printf '%P\n' | sort
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -90,4 +62,3 @@ jobs:
       - name: Publicar página
         id: deployment
         uses: actions/deploy-pages@v4
-        
