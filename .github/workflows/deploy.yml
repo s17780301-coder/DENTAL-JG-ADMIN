@@ -91,6 +91,23 @@ jobs:
             echo "::warning::El paquete no contiene supabase/functions/administrar-usuarios/index.ts."
           fi
 
+          # Exponer el error de consulta de roles propios para distinguir configuración, consulta o claves.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("supabase/functions/administrar-usuarios/index.ts")
+          if p.is_file():
+              source = p.read_text()
+              old = '{ error: "No se pudieron verificar los roles de la cuenta." },'
+              new = '{ error: `No se pudieron verificar los roles de la cuenta: ${myRolesError.message}` },'
+              if old in source:
+                  p.write_text(source.replace(old, new, 1))
+                  print("Diagnóstico de my_roles habilitado.")
+              else:
+                  print("El manejador my_roles ya tiene diagnóstico o usa otra versión.")
+          else:
+              print("No se encontró la Edge Function para el diagnóstico my_roles.")
+          PY
+
           # Mostrar el error real de Supabase al iniciar sesión; no modificar usuarios ni contraseñas.
           python3 - <<'PY'
           from pathlib import Path
