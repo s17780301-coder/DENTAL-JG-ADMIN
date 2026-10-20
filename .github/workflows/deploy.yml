@@ -1,19 +1,15 @@
 name: Publicar panel DENTAL JG
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,13 +17,19 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Localizar y preparar archivos del portal
-        shell: bash
+      - name: Extraer ZIP del panel
         run: |
           set -euo pipefail
-          mkdir -p public
+          ZIP="DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip"
+          if [[ ! -f "$ZIP" ]]; then
+            echo "ERROR: No existe $ZIP en la raíz del repositorio."
+            echo "Archivos disponibles:"
+            find . -maxdepth 3 -type f -not -path './.git/*' | sort | head -200
+            exit 1
+          fi
+          mkdir -p extracted public
+          unzip -o "$ZIP" -d extracted
 
-          # Busca una carpeta que contenga TODOS los archivos requeridos.
           PANEL_DIR=""
           while IFS= read -r -d '' candidate; do
             dir="$(dirname "$candidate")"
@@ -35,20 +37,19 @@ jobs:
               PANEL_DIR="$dir"
               break
             fi
-          done < <(find . -type f -name index.html -not -path './.git/*' -print0)
+          done < <(find extracted -type f -name index.html -print0)
 
           if [[ -z "$PANEL_DIR" ]]; then
-            echo 'ERROR: No se encontró una carpeta que contenga index.html, styles.css, app.js, config.js, users.js y logo-dental-jg.png.'
-            echo 'Archivos index.html localizados:'
-            find . -type f -name index.html -not -path './.git/*' -print || true
-            echo 'Archivos del repositorio (primeros 200):'
-            find . -type f -not -path './.git/*' | sort | head -200
+            echo 'ERROR: El ZIP no contiene todos los archivos requeridos del panel.'
+            echo 'Contenido extraído:'
+            find extracted -type f | sort
             exit 1
           fi
 
-          echo "Portal localizado en: $PANEL_DIR"
+          echo "Panel encontrado en: $PANEL_DIR"
           cp "$PANEL_DIR/index.html" "$PANEL_DIR/styles.css" "$PANEL_DIR/app.js" "$PANEL_DIR/config.js" "$PANEL_DIR/users.js" "$PANEL_DIR/logo-dental-jg.png" public/
-          ls -la public
+          test -s public/index.html
+          ls -lah public
 
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
