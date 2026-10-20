@@ -1,4 +1,3 @@
-
 name: Publicar panel DENTAL JG
 
 on:
@@ -8,7 +7,7 @@ on:
       - main
     paths:
       - ".github/workflows/deploy.yml"
-      - "DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip"
+      - "DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO*.zip"
 
 permissions:
   contents: read
@@ -22,7 +21,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -35,20 +33,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          PANEL_ZIP="DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip"
+          PANEL_ZIP="$(find . -maxdepth 1 -type f -name 'DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO*.zip' -print -quit)"
           mkdir -p extracted public
 
-          if [ ! -s "$PANEL_ZIP" ]; then
-            echo "::error::No se encontró el ZIP: $PANEL_ZIP"
+          if [ -z "$PANEL_ZIP" ] || [ ! -s "$PANEL_ZIP" ]; then
+            echo "::error::No se encontró el ZIP del panel en la raíz del repositorio."
+            echo "Archivos ZIP disponibles:"
+            find . -maxdepth 1 -type f -iname '*.zip' -print
             exit 1
           fi
 
+          echo "ZIP seleccionado: $PANEL_ZIP"
           echo "Validando ZIP..."
           unzip -tq "$PANEL_ZIP"
           unzip -oq "$PANEL_ZIP" -d extracted
 
           INDEX="$(find extracted -type f -name index.html -print -quit)"
-
           if [ -z "$INDEX" ]; then
             echo "::error::El ZIP no contiene index.html"
             find extracted -maxdepth 5 -type f | head -n 100
@@ -59,12 +59,11 @@ jobs:
           cp -a "$PANEL_DIR"/. public/
 
           if [ ! -s public/index.html ]; then
-            echo "::error::No se preparó index.html"
+            echo "::error::No se preparó public/index.html"
             exit 1
           fi
 
           touch public/.nojekyll
-
           echo "Archivos preparados:"
           find public -maxdepth 3 -type f | sort | head -n 100
 
@@ -76,13 +75,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Publicar página
         id: deployment
         uses: actions/deploy-pages@v4
-        
