@@ -1,0 +1,1 @@
+Trigger GitHub Actions after configuring the SUPABASE_ACCESS_TOKEN repository secret. This file does not contain credentials.
