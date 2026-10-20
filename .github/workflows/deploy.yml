@@ -17,38 +17,64 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Extraer ZIP del panel
+      - name: Preparar archivos del panel
+        shell: bash
         run: |
           set -euo pipefail
-          ZIP="DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip"
-          if [[ ! -f "$ZIP" ]]; then
-            echo "ERROR: No existe $ZIP en la raíz del repositorio."
-            echo "Archivos disponibles:"
-            find . -maxdepth 3 -type f -not -path './.git/*' | sort | head -200
-            exit 1
-          fi
-          mkdir -p extracted public
-          unzip -o "$ZIP" -d extracted
+          mkdir -p public extracted
 
-          PANEL_DIR=""
-          while IFS= read -r -d '' candidate; do
-            dir="$(dirname "$candidate")"
-            if [[ -f "$dir/index.html" && -f "$dir/styles.css" && -f "$dir/app.js" && -f "$dir/config.js" && -f "$dir/users.js" && -f "$dir/logo-dental-jg.png" ]]; then
-              PANEL_DIR="$dir"
-              break
+          # Preferir los archivos ya desplegables en la raíz del repositorio.
+          required=(index.html styles.css app.js config.js users.js logo-dental-jg.png)
+          root_ready=true
+          for file in "${required[@]}"; do
+            [[ -s "$file" ]] || root_ready=false
+          done
+
+          if [[ "$root_ready" == true ]]; then
+            echo "Usando archivos del panel ubicados en la raíz del repositorio."
+            cp "${required[@]}" public/
+          else
+            # No depender de un nombre fijo de ZIP: detectar cualquier ZIP del repositorio
+            # que contenga la estructura completa del panel.
+            shopt -s nullglob
+            zips=( *.zip paquetes/*.zip )
+            panel_dir=""
+            for zip in "${zips[@]}"; do
+              [[ -f "$zip" ]] || continue
+              rm -rf extracted/*
+              if ! unzip -oq "$zip" -d extracted; then
+                echo "Aviso: se omite ZIP no válido: $zip"
+                continue
+              fi
+              while IFS= read -r -d '' candidate; do
+                dir="$(dirname "$candidate")"
+                complete=true
+                for file in "${required[@]}"; do
+                  [[ -s "$dir/$file" ]] || complete=false
+                done
+                if [[ "$complete" == true ]]; then
+                  panel_dir="$dir"
+                  break
+                fi
+              done < <(find extracted -type f -name index.html -print0)
+              if [[ -n "$panel_dir" ]]; then
+                echo "Panel encontrado en $zip: $panel_dir"
+                break
+              fi
+            done
+
+            if [[ -z "$panel_dir" ]]; then
+              echo "::error::No se encontraron los archivos del panel ni un ZIP que los contenga."
+              echo "Sube index.html, styles.css, app.js, config.js, users.js y logo-dental-jg.png a la raíz, o agrega un ZIP válido en la raíz o en paquetes/."
+              echo "Archivos disponibles:"
+              find . -maxdepth 3 -type f -not -path './.git/*' | sort | head -200
+              exit 1
             fi
-          done < <(find extracted -type f -name index.html -print0)
-
-          if [[ -z "$PANEL_DIR" ]]; then
-            echo 'ERROR: El ZIP no contiene todos los archivos requeridos del panel.'
-            echo 'Contenido extraído:'
-            find extracted -type f | sort
-            exit 1
+            cp "$panel_dir"/{index.html,styles.css,app.js,config.js,users.js,logo-dental-jg.png} public/
           fi
 
-          echo "Panel encontrado en: $PANEL_DIR"
-          cp "$PANEL_DIR/index.html" "$PANEL_DIR/styles.css" "$PANEL_DIR/app.js" "$PANEL_DIR/config.js" "$PANEL_DIR/users.js" "$PANEL_DIR/logo-dental-jg.png" public/
           test -s public/index.html
+          echo "Archivos preparados para GitHub Pages:"
           ls -lah public
 
       - name: Subir artefacto de Pages
