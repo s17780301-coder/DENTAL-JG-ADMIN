@@ -1,84 +1,120 @@
 name: Publicar panel DENTAL JG
-
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/deploy.yml"
-      - "DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO*.zip"
-
+workflow_dispatch:
+push:
+branches:
+- main
+paths:
+- ".github/workflows/deploy.yml"
+- "DENTAL_JG_PANEL*.zip"
+- "index.html"
+- "app.js"
+- "config.js"
+- "users.js"
+- "styles.css"
+- "logo-dental-jg.png"
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+contents: read
+pages: write
+id-token: write
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
-
+group: github-pages
+cancel-in-progress: true
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v4
+build:
+runs-on: ubuntu-latest
+steps:
+  - name: Descargar repositorio
+    uses: actions/checkout@v4
 
-      - name: Configurar GitHub Pages
-        uses: actions/configure-pages@v5
+  - name: Configurar GitHub Pages
+    uses: actions/configure-pages@v5
 
-      - name: Validar y preparar panel
-        shell: bash
-        run: |
-          set -euo pipefail
+  - name: Validar y preparar panel
+    shell: bash
+    run: |
+      set -euo pipefail
 
-          PANEL_ZIP="$(find . -maxdepth 1 -type f -name 'DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO*.zip' -print -quit)"
-          mkdir -p extracted public
+      mkdir -p extracted public
 
-          if [ -z "$PANEL_ZIP" ] || [ ! -s "$PANEL_ZIP" ]; then
-            echo "::error::No se encontró el ZIP del panel en la raíz del repositorio."
-            echo "Archivos ZIP disponibles:"
-            find . -maxdepth 1 -type f -iname '*.zip' -print
-            exit 1
-          fi
+      echo "Buscando el ZIP del panel..."
 
-          echo "ZIP seleccionado: $PANEL_ZIP"
-          echo "Validando ZIP..."
-          unzip -tq "$PANEL_ZIP"
-          unzip -oq "$PANEL_ZIP" -d extracted
+      PANEL_ZIP=""
 
-          INDEX="$(find extracted -type f -name index.html -print -quit)"
-          if [ -z "$INDEX" ]; then
-            echo "::error::El ZIP no contiene index.html"
-            find extracted -maxdepth 5 -type f | head -n 100
-            exit 1
-          fi
+      # Priorizar la versión más reciente conocida.
+      for candidate in \
+        "DENTAL_JG_PANEL_10_8_98_SEGURIDAD_DUPLICADOS.zip" \
+        "DENTAL_JG_PANEL_10_8_97_REVISION_COMPLETA_JS_DESPLIEGUE.zip" \
+        "DENTAL_JG_PANEL_ROLES_RECONSTRUIDO_DESDE_CERO.zip"
+      do
+        if [ -s "$candidate" ]; then
+          PANEL_ZIP="$candidate"
+          break
+        fi
+      done
 
-          PANEL_DIR="$(dirname "$INDEX")"
-          cp -a "$PANEL_DIR"/. public/
+      # Aceptar también otras versiones con el mismo prefijo.
+      if [ -z "$PANEL_ZIP" ]; then
+        PANEL_ZIP="$(find . -maxdepth 1 -type f \
+          -iname 'DENTAL_JG_PANEL*.zip' \
+          -print | sort -r | head -n 1 || true)"
+      fi
 
-          if [ ! -s public/index.html ]; then
-            echo "::error::No se preparó public/index.html"
-            exit 1
-          fi
+      if [ -z "$PANEL_ZIP" ] || [ ! -s "$PANEL_ZIP" ]; then
+        echo "::error::No se encontró ningún ZIP DENTAL_JG_PANEL*.zip en la raíz."
+        echo "Archivos ZIP disponibles:"
+        find . -maxdepth 1 -type f -iname '*.zip' -print
+        echo "Sube el ZIP del panel a la raíz del repositorio."
+        exit 1
+      fi
 
-          touch public/.nojekyll
-          echo "Archivos preparados:"
-          find public -maxdepth 3 -type f | sort | head -n 100
+      echo "ZIP seleccionado: $PANEL_ZIP"
+      echo "Validando integridad..."
+      unzip -tq "$PANEL_ZIP"
 
-      - name: Subir artefacto de Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
+      echo "Extrayendo archivos..."
+      unzip -oq "$PANEL_ZIP" -d extracted
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Publicar página
-        id: deployment
-        uses: actions/deploy-pages@v4
+      INDEX="$(find extracted -type f \
+        -name index.html -print -quit)"
+
+      if [ -z "$INDEX" ]; then
+        echo "::error::El ZIP no contiene index.html."
+        find extracted -maxdepth 5 -type f | head -n 100
+        exit 1
+      fi
+
+      PANEL_DIR="$(dirname "$INDEX")"
+      echo "Directorio del panel: $PANEL_DIR"
+
+      cp -a "$PANEL_DIR"/. public/
+
+      if [ ! -s public/index.html ]; then
+        echo "::error::No se preparó public/index.html."
+        exit 1
+      fi
+
+      touch public/.nojekyll
+
+      echo "Comprobando archivos publicados..."
+      find public -maxdepth 4 -type f | sort | head -n 150
+
+      echo "Panel preparado correctamente."
+
+  - name: Subir artefacto de Pages
+    uses: actions/upload-pages-artifact@v3
+    with:
+      path: public
+
+deploy:
+needs: build
+runs-on: ubuntu-latest
+environment:
+  name: github-pages
+  url: ${{ steps.deployment.outputs.page_url }}
+
+steps:
+  - name: Publicar página
+    id: deployment
+    uses: actions/deploy-pages@v4
+
