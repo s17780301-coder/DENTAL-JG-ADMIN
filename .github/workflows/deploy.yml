@@ -317,7 +317,7 @@ jobs:
 
           recovery, n = re.subn(
               r'const isRecovery = .*?;',
-              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || params.has("code") || (params.has("token_hash") && params.get("type") === "recovery");',
+              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || params.has("code") || (params.has("token_hash") || hash.has("access_token") || hash.has("error_description") || params.has("error_code"));',
               recovery, count=1
           )
           if n != 1:
@@ -371,7 +371,7 @@ jobs:
 
           index = Path("public/index.html")
           html = index.read_text(encoding="utf-8")
-          html, changed = re.subn(r'app\.js\?v=[^"\']+', 'app.js?v=10.8.101', html, count=1)
+          html, changed = re.subn(r'app\.js\?v=[^"\']+', 'app.js?v=10.8.102', html, count=1)
           if changed != 1:
               raise SystemExit("No se pudo actualizar la versión de caché de app.js.")
           index.write_text(html, encoding="utf-8")
