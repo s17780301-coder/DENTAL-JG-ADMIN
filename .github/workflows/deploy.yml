@@ -302,45 +302,80 @@ jobs:
               print("Formulario de recuperación ya presente.")
           PY
 
-          # Aceptar enlaces de recuperación Supabase en formatos PKCE (?code=),
-          # token_hash y access_token/refresh_token en el fragmento de URL.
+          # Hacer compatible la recuperación con el cliente real del panel y romper caché antigua.
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          p = Path("public/app.js")
-          source = p.read_text(encoding="utf-8")
+          app = Path("public/app.js")
+          source = app.read_text(encoding="utf-8")
+          marker = "// DENTAL_JG_PASSWORD_RECOVERY_FORM"
+          if marker not in source:
+              raise SystemExit("Falta el formulario de recuperación en app.js.")
+          split = source.index(marker)
+          prefix, recovery = source[:split], source[split:]
 
-          old_detection = 'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery";'
-          new_detection = 'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || params.has("code") || (params.has("token_hash") && params.get("type") === "recovery");'
-          if old_detection in source:
-              source = source.replace(old_detection, new_detection, 1)
-          elif new_detection not in source:
-              raise SystemExit("No se encontró la detección del formulario de recuperación; se cancela la publicación.")
+          recovery, n = re.subn(
+              r'const isRecovery = .*?;',
+              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || params.has("code") || (params.has("token_hash") && params.get("type") === "recovery");',
+              recovery, count=1
+          )
+          if n != 1:
+              raise SystemExit("No se pudo normalizar la detección del enlace de recuperación.")
 
-          pattern = r'if \(!sessionData\?\.session\)\s*\{\s*const accessToken = hash\.get\("access_token"\) \|\| params\.get\("access_token"\);\s*const refreshToken = hash\.get\("refresh_token"\) \|\| params\.get\("refresh_token"\);\s*if \(accessToken && refreshToken\)\s*\{\s*const \{ error: sessionError \} = await client\.auth\.setSession\(\{ access_token: accessToken, refresh_token: refreshToken \}\);\s*if \(sessionError\) throw sessionError;\s*\}\s*\}'
-          new_session = """if (!sessionData?.session) {
+          old_client_check = 'if (typeof client === "undefined" || !client?.auth) throw new Error("No se encontró la conexión de autenticación. Solicita un enlace nuevo desde el panel.");'
+          new_client_check = 'const recoveryClient = window.supabase?.createClient(window.DENTAL_CONFIG?.supabaseUrl, window.DENTAL_CONFIG?.supabaseAnonKey); if (!recoveryClient?.auth) throw new Error("No se pudo inicializar la conexión de recuperación de Supabase.");'
+          if old_client_check in recovery:
+              recovery = recovery.replace(old_client_check, new_client_check, 1)
+          elif "const recoveryClient = window.supabase?.createClient" not in recovery:
+              raise SystemExit("No se pudo inicializar el cliente de recuperación.")
+          recovery = recovery.replace("client.auth.", "recoveryClient.auth.")
+
+          # Procesar el token_hash al enviar el formulario o los tokens clásicos de Supabase.
+          old_session_start = 'if (!sessionData?.session) {'
+          if old_session_start not in recovery:
+              raise SystemExit("No se encontró el bloque de sesión de recuperación.")
+          old_token_block = """if (!sessionData?.session) {
+                    const accessToken = hash.get("access_token") || params.get("access_token");
+                    const refreshToken = hash.get("refresh_token") || params.get("refresh_token");
+                    if (accessToken && refreshToken) {
+                      const { error: sessionError } = await recoveryClient.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                      if (sessionError) throw sessionError;
+                    }
+                  }"""
+          new_token_block = """if (!sessionData?.session) {
                     const tokenHash = params.get("token_hash") || hash.get("token_hash");
                     if (tokenHash) {
-                      const { error: verifyError } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
+                      const { error: verifyError } = await recoveryClient.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
                       if (verifyError) throw verifyError;
                     } else {
                       const accessToken = hash.get("access_token") || params.get("access_token");
                       const refreshToken = hash.get("refresh_token") || params.get("refresh_token");
                       if (accessToken && refreshToken) {
-                        const { error: sessionError } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                        const { error: sessionError } = await recoveryClient.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
                         if (sessionError) throw sessionError;
                       } else {
-                        throw new Error("El enlace no contiene una sesión de recuperación válida. Solicita un enlace nuevo.");
+                        throw new Error("No se detectó la sesión de recuperación. El enlace puede haber caducado o redirigido sin token.");
                       }
                     }
                   }"""
-          source, changed = re.subn(pattern, lambda _: new_session, source, count=1)
-          if changed == 0 and 'client.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" })' not in source:
-              raise SystemExit("No se localizó el bloque de sesión con ninguna indentación reconocida; no se publicará un arreglo incompleto.")
+          if old_token_block in recovery:
+              recovery = recovery.replace(old_token_block, new_token_block, 1)
+          elif 'recoveryClient.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" })' not in recovery:
+              pattern = r'if \(!sessionData\?\.session\)\s*\{\s*const accessToken = hash\.get\("access_token"\) \|\| params\.get\("access_token"\);\s*const refreshToken = hash\.get\("refresh_token"\) \|\| params\.get\("refresh_token"\);\s*if \(accessToken && refreshToken\)\s*\{\s*const \{ error: sessionError \} = await recoveryClient\.auth\.setSession\(\{ access_token: accessToken, refresh_token: refreshToken \}\);\s*if \(sessionError\) throw sessionError;\s*\}\s*\}'
+              recovery, changed = re.subn(pattern, lambda _: new_token_block, recovery, count=1)
+              if changed != 1:
+                  raise SystemExit("No se pudo reemplazar el bloque de sesión; se cancela el despliegue.")
 
-          p.write_text(source, encoding="utf-8")
-          print("Recuperación compatible con code, token_hash y access_token.")
+          app.write_text(prefix + recovery, encoding="utf-8")
+
+          index = Path("public/index.html")
+          html = index.read_text(encoding="utf-8")
+          html, changed = re.subn(r'app\.js\?v=[^"\']+', 'app.js?v=10.8.101', html, count=1)
+          if changed != 1:
+              raise SystemExit("No se pudo actualizar la versión de caché de app.js.")
+          index.write_text(html, encoding="utf-8")
+          print("Cliente de recuperación inicializado y caché de app.js renovada.")
           PY
 
           test -s public/index.html
