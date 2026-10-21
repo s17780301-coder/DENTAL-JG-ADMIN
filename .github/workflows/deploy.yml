@@ -302,26 +302,24 @@ jobs:
               print("Formulario de recuperación ya presente.")
           PY
 
-          # Corregir los formatos de enlace de recuperación que usa Supabase:
-          # token_hash + type=recovery y access_token/refresh_token en el fragmento.
+          # Aceptar enlaces de recuperación Supabase en formatos PKCE (?code=),
+          # token_hash y access_token/refresh_token en el fragmento de URL.
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path("public/app.js")
           source = p.read_text(encoding="utf-8")
-          source = source.replace(
-              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery";',
-              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || (params.has("token_hash") && params.get("type") === "recovery");'
-          )
-          old = '''                  if (!sessionData?.session) {
-                    const accessToken = hash.get("access_token") || params.get("access_token");
-                    const refreshToken = hash.get("refresh_token") || params.get("refresh_token");
-                    if (accessToken && refreshToken) {
-                      const { error: sessionError } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-                      if (sessionError) throw sessionError;
-                    }
-                  }
-                  const { error } = await client.auth.updateUser({ password });'''
-          new = '''                  if (!sessionData?.session) {
+
+          old_detection = 'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery";'
+          new_detection = 'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || params.has("code") || (params.has("token_hash") && params.get("type") === "recovery");'
+          if old_detection in source:
+              source = source.replace(old_detection, new_detection, 1)
+          elif new_detection not in source:
+              raise SystemExit("No se encontró la detección del formulario de recuperación; se cancela la publicación.")
+
+          pattern = r'if \(!sessionData\?\.session\)\s*\{\s*const accessToken = hash\.get\("access_token"\) \|\| params\.get\("access_token"\);\s*const refreshToken = hash\.get\("refresh_token"\) \|\| params\.get\("refresh_token"\);\s*if \(accessToken && refreshToken\)\s*\{\s*const \{ error: sessionError \} = await client\.auth\.setSession\(\{ access_token: accessToken, refresh_token: refreshToken \}\);\s*if \(sessionError\) throw sessionError;\s*\}\s*\}'
+          new_session = """if (!sessionData?.session) {
                     const tokenHash = params.get("token_hash") || hash.get("token_hash");
                     if (tokenHash) {
                       const { error: verifyError } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
@@ -336,13 +334,13 @@ jobs:
                         throw new Error("El enlace no contiene una sesión de recuperación válida. Solicita un enlace nuevo.");
                       }
                     }
-                  }
-                  const { error } = await client.auth.updateUser({ password });'''
-          if old not in source:
-              raise SystemExit("No se encontró el bloque de sesión de recuperación esperado; se cancela la publicación.")
-          source = source.replace(old, new, 1)
+                  }"""
+          source, changed = re.subn(pattern, lambda _: new_session, source, count=1)
+          if changed == 0 and 'client.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" })' not in source:
+              raise SystemExit("No se localizó el bloque de sesión con ninguna indentación reconocida; no se publicará un arreglo incompleto.")
+
           p.write_text(source, encoding="utf-8")
-          print("Verificación de enlaces token_hash de recuperación añadida.")
+          print("Recuperación compatible con code, token_hash y access_token.")
           PY
 
           test -s public/index.html
