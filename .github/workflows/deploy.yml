@@ -108,6 +108,82 @@ jobs:
               print("No se encontró la Edge Function para el diagnóstico my_roles.")
           PY
 
+          # Añadir delete_user porque la interfaz de Usuarios incluye esa acción.
+          # Protege la cuenta actual y el último administrador antes de borrar en Auth.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("supabase/functions/administrar-usuarios/index.ts")
+          if not p.is_file():
+              raise SystemExit("Falta la Edge Function administrar-usuarios/index.ts")
+          source = p.read_text(encoding="utf-8")
+          if 'if (action === "delete_user")' not in source:
+              marker = 'return jsonResponse(\nreq,\n{\nerror: "Acción no reconocida."'
+              if source.count(marker) != 1:
+                  raise SystemExit("No se encontró de forma única el bloque de acción no reconocida; no se modificó la función.")
+              handler = r"""
+          if (action === "delete_user") {
+          const userId = String(body.user_id ?? "").trim();
+          if (!userId) {
+          return jsonResponse(req, { error: "Falta user_id." }, 400);
+          }
+          if (userId === callerData.user.id) {
+          return jsonResponse(req, { error: "No puedes eliminar tu propia cuenta desde Administración." }, 400);
+          }
+
+          const { data: targetData, error: targetError } =
+          await adminClient.auth.admin.getUserById(userId);
+          if (targetError || !targetData.user) {
+          return jsonResponse(req, { error: "La cuenta indicada no existe." }, 404);
+          }
+
+          const { data: targetRoleRows, error: targetRolesError } = await adminClient
+          .from("app_user_roles").select("role").eq("user_id", userId);
+          if (targetRolesError) {
+          console.error("No se pudieron consultar los roles de la cuenta que se quiere eliminar:", targetRolesError.message);
+          return jsonResponse(req, { error: "No se pudieron comprobar los permisos de la cuenta." }, 500);
+          }
+
+          const targetIsAdmin = (targetRoleRows ?? []).some(
+          (row: { role?: string }) => String(row.role ?? "").trim().toLowerCase() === "admin",
+          );
+          if (targetIsAdmin) {
+          const { count, error: adminCountError } = await adminClient
+          .from("app_user_roles")
+          .select("user_id", { count: "exact", head: true })
+          .eq("role", "admin");
+          if (adminCountError) {
+          console.error("No se pudo contar a los administradores antes de eliminar:", adminCountError.message);
+          return jsonResponse(req, { error: "No se pudo verificar si existe otro administrador." }, 500);
+          }
+          if ((count ?? 0) <= 1) {
+          return jsonResponse(req, { error: "No puedes eliminar al último administrador." }, 400);
+          }
+          }
+
+          const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
+          if (deleteError) {
+          console.error("No se pudo eliminar la cuenta:", deleteError.message);
+          return jsonResponse(req, { error: "No se pudo eliminar la cuenta: " + deleteError.message }, 400);
+          }
+
+          const { error: cleanupError } = await adminClient
+          .from("app_user_roles").delete().eq("user_id", userId);
+          if (cleanupError) {
+          console.error("Cuenta eliminada; no se pudieron limpiar todos sus roles:", cleanupError.message);
+          return jsonResponse(req, { error: "La cuenta se eliminó, pero no se pudieron limpiar sus roles. Revisa app_user_roles." }, 500);
+          }
+
+          return jsonResponse(req, { message: "Cuenta eliminada definitivamente." });
+          }
+
+          """
+              source = source.replace(marker, handler + "\n" + marker, 1)
+          if '"delete_user",' not in source:
+              source = source.replace('"reset_password",\n],', '"reset_password",\n"delete_user",\n],', 1)
+          p.write_text(source, encoding="utf-8")
+          print("Acción delete_user verificada y preparada.")
+          PY
+
           # Mostrar el error real de Supabase al iniciar sesión; no modificar usuarios ni contraseñas.
           python3 - <<'PY'
           from pathlib import Path
