@@ -1,4 +1,5 @@
 name: Publicar panel DENTAL JG
+# Revalidación completa: desplegar la Edge Function administrar-usuarios cuando exista SUPABASE_ACCESS_TOKEN
 on:
   push:
     branches: [main]
