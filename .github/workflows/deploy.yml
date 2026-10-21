@@ -108,6 +108,43 @@ jobs:
               print("No se encontró la Edge Function para el diagnóstico my_roles.")
           PY
 
+          # Corregir CORS de la Edge Function en cada despliegue. El ZIP puede contener una copia antigua.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("supabase/functions/administrar-usuarios/index.ts")
+          if not p.is_file():
+              raise SystemExit("Falta la Edge Function administrar-usuarios/index.ts")
+
+          source = p.read_text(encoding="utf-8")
+          origins = '''const ALLOWED_ORIGINS = new Set([
+            "https://s17780301-coder.github.io",
+            "https://appassets.androidplatform.net",
+            "https://localhost",
+            "http://localhost",
+            "capacitor://localhost",
+            "ionic://localhost",
+          ]);'''
+          pattern = r'const ALLOWED_ORIGINS = new Set\(\[\s*"https://s17780301-coder\.github\.io",\s*\]\);'
+          source, changed = re.subn(pattern, origins, source, count=1)
+          if changed == 0 and '"https://appassets.androidplatform.net"' not in source:
+              raise SystemExit("No se pudo actualizar ALLOWED_ORIGINS; se cancela el despliegue para evitar publicar una función sin corregir.")
+
+          old_headers = '"authorization, x-client-info, apikey, content-type"'
+          new_headers = '"authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-supabase-client-platform, x-supabase-client-version, x-supabase-client-runtime, x-supabase-client-runtime-version"'
+          if old_headers in source:
+              source = source.replace(old_headers, new_headers, 1)
+          elif "x-supabase-client-platform" not in source:
+              raise SystemExit("No se pudieron actualizar los encabezados CORS; se cancela el despliegue.")
+
+          if '"https://appassets.androidplatform.net"' not in source or "x-supabase-client-platform" not in source:
+              raise SystemExit("Falló la verificación final de CORS; no se publicará una función incorrecta.")
+
+          p.write_text(source, encoding="utf-8")
+          print("CORS verificado: portal web + Android WebView + encabezados Supabase.")
+          PY
+
           # Añadir delete_user porque la interfaz de Usuarios incluye esa acción.
           # Protege la cuenta actual y el último administrador antes de borrar en Auth.
           python3 - <<'PY'
