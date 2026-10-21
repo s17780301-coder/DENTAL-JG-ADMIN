@@ -236,6 +236,72 @@ jobs:
               print("Aviso: no se encontró la cadena de error esperada; se conserva app.js sin cambios.")
           PY
 
+          # Mostrar un formulario de contraseña nueva cuando Supabase redirige con type=recovery.
+          # Se añade al mismo app.js para poder usar el cliente Supabase existente (client).
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("public/app.js")
+          source = p.read_text(encoding="utf-8")
+          marker = "// DENTAL_JG_PASSWORD_RECOVERY_FORM"
+          if marker not in source:
+              source += r"""
+
+          // DENTAL_JG_PASSWORD_RECOVERY_FORM
+          (() => {
+            const params = new URLSearchParams(window.location.search);
+            const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+            const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery";
+            if (!isRecovery) return;
+
+            const showRecovery = () => {
+              if (document.getElementById("dental-jg-recovery-panel")) return;
+              const panel = document.createElement("section");
+              panel.id = "dental-jg-recovery-panel";
+              panel.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#101a23;color:#e8f1f8;font-family:system-ui,sans-serif";
+              panel.innerHTML = '<div style="width:min(100%,520px);box-sizing:border-box;padding:28px;border:1px solid #314453;border-radius:24px;background:#182632"><h2 style="margin-top:0">Crear nueva contraseña</h2><p>Escribe tu contraseña nueva para recuperar el acceso a DENTAL JG.</p><form id="dental-jg-recovery-form"><label for="dental-jg-new-password" style="display:block;margin:16px 0 8px">Nueva contraseña</label><input id="dental-jg-new-password" type="password" minlength="8" autocomplete="new-password" required style="box-sizing:border-box;width:100%;padding:14px;border-radius:12px;border:1px solid #405564;background:#101a23;color:#fff;font-size:16px"><label for="dental-jg-confirm-password" style="display:block;margin:16px 0 8px">Confirmar contraseña</label><input id="dental-jg-confirm-password" type="password" minlength="8" autocomplete="new-password" required style="box-sizing:border-box;width:100%;padding:14px;border-radius:12px;border:1px solid #405564;background:#101a23;color:#fff;font-size:16px"><button type="submit" style="margin-top:22px;width:100%;padding:15px;border:0;border-radius:12px;background:#0b928b;color:white;font-size:17px;font-weight:700">Guardar contraseña nueva</button><p id="dental-jg-recovery-status" role="status" style="overflow-wrap:anywhere"></p></form></div>';
+              document.body.appendChild(panel);
+              const form = panel.querySelector("#dental-jg-recovery-form");
+              const status = panel.querySelector("#dental-jg-recovery-status");
+              form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const password = panel.querySelector("#dental-jg-new-password").value;
+                const confirmation = panel.querySelector("#dental-jg-confirm-password").value;
+                if (password.length < 8) { status.textContent = "Usa al menos 8 caracteres."; return; }
+                if (password !== confirmation) { status.textContent = "Las contraseñas no coinciden."; return; }
+                const button = form.querySelector("button");
+                button.disabled = true;
+                status.textContent = "Guardando contraseña…";
+                try {
+                  if (typeof client === "undefined" || !client?.auth) throw new Error("No se encontró la conexión de autenticación. Solicita un enlace nuevo desde el panel.");
+                  const { data: sessionData } = await client.auth.getSession();
+                  if (!sessionData?.session) {
+                    const accessToken = hash.get("access_token") || params.get("access_token");
+                    const refreshToken = hash.get("refresh_token") || params.get("refresh_token");
+                    if (accessToken && refreshToken) {
+                      const { error: sessionError } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                      if (sessionError) throw sessionError;
+                    }
+                  }
+                  const { error } = await client.auth.updateUser({ password });
+                  if (error) throw error;
+                  status.textContent = "Contraseña actualizada. Ya puedes volver a iniciar sesión.";
+                  window.setTimeout(() => { window.location.href = window.location.origin + window.location.pathname; }, 1800);
+                } catch (error) {
+                  status.textContent = "No se pudo guardar la contraseña: " + (error?.message || "enlace vencido o inválido");
+                  button.disabled = false;
+                }
+              });
+            };
+            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", showRecovery, { once: true });
+            else showRecovery();
+          })();
+          """
+              p.write_text(source, encoding="utf-8")
+              print("Formulario de recuperación de contraseña añadido.")
+          else:
+              print("Formulario de recuperación ya presente.")
+          PY
+
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
