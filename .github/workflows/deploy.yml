@@ -302,6 +302,49 @@ jobs:
               print("Formulario de recuperación ya presente.")
           PY
 
+          # Corregir los formatos de enlace de recuperación que usa Supabase:
+          # token_hash + type=recovery y access_token/refresh_token en el fragmento.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("public/app.js")
+          source = p.read_text(encoding="utf-8")
+          source = source.replace(
+              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery";',
+              'const isRecovery = params.get("type") === "recovery" || hash.get("type") === "recovery" || (params.has("token_hash") && params.get("type") === "recovery");'
+          )
+          old = '''                  if (!sessionData?.session) {
+                    const accessToken = hash.get("access_token") || params.get("access_token");
+                    const refreshToken = hash.get("refresh_token") || params.get("refresh_token");
+                    if (accessToken && refreshToken) {
+                      const { error: sessionError } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                      if (sessionError) throw sessionError;
+                    }
+                  }
+                  const { error } = await client.auth.updateUser({ password });'''
+          new = '''                  if (!sessionData?.session) {
+                    const tokenHash = params.get("token_hash") || hash.get("token_hash");
+                    if (tokenHash) {
+                      const { error: verifyError } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
+                      if (verifyError) throw verifyError;
+                    } else {
+                      const accessToken = hash.get("access_token") || params.get("access_token");
+                      const refreshToken = hash.get("refresh_token") || params.get("refresh_token");
+                      if (accessToken && refreshToken) {
+                        const { error: sessionError } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                        if (sessionError) throw sessionError;
+                      } else {
+                        throw new Error("El enlace no contiene una sesión de recuperación válida. Solicita un enlace nuevo.");
+                      }
+                    }
+                  }
+                  const { error } = await client.auth.updateUser({ password });'''
+          if old not in source:
+              raise SystemExit("No se encontró el bloque de sesión de recuperación esperado; se cancela la publicación.")
+          source = source.replace(old, new, 1)
+          p.write_text(source, encoding="utf-8")
+          print("Verificación de enlaces token_hash de recuperación añadida.")
+          PY
+
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
