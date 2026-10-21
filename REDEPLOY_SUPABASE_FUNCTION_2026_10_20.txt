@@ -1,0 +1,1 @@
+Trigger a fresh deployment after configuring SUPABASE_ACCESS_TOKEN in repository Actions secrets. Contains no credentials.
