@@ -378,6 +378,128 @@ jobs:
           print("Cliente de recuperación inicializado y caché de app.js renovada.")
           PY
 
+          # Añadir autoservicio de correo y contraseña a la cuenta autenticada de Administración.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          html_path = Path("public/index.html")
+          js_path = Path("public/app.js")
+          html = html_path.read_text(encoding="utf-8")
+          js = js_path.read_text(encoding="utf-8")
+
+          nav_marker = '<div class="profile">'
+          if 'id="ownAccountOpen"' not in html:
+              if nav_marker not in html:
+                  raise SystemExit("No se encontró el perfil lateral para añadir Mi cuenta.")
+              html = html.replace(nav_marker, nav_marker, 1)
+              profile_end = html.find('</div>', html.find(nav_marker))
+              if profile_end < 0:
+                  raise SystemExit("No se pudo localizar el bloque de perfil.")
+              profile_end += len('</div>')
+              html = html[:profile_end] + '\n    <button id="ownAccountOpen" class="secondary" type="button" style="width:100%;margin:10px 0">Mi cuenta y contraseña</button>\n' + html[profile_end:]
+
+          if 'id="ownAccountModal"' not in html:
+              modal = '''
+          <div id="ownAccountModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="ownAccountTitle" style="position:fixed;inset:0;z-index:10000;background:rgba(5,15,22,.78);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto">
+            <section class="panel" style="width:min(100%,560px);max-height:92vh;overflow:auto;background:var(--panel,#fff);padding:24px;border-radius:20px">
+              <div class="section-head"><div><p class="eyebrow">SEGURIDAD DE LA CUENTA</p><h3 id="ownAccountTitle">Mi cuenta</h3><p>Cambia tus propios datos de acceso. Tus permisos no se modifican.</p></div></div>
+              <form id="ownAccountForm" class="form-grid">
+                <label class="full">Correo de acceso<input id="ownAccountEmail" type="email" maxlength="254" autocomplete="email" required></label>
+                <label class="full">Nueva contraseña (opcional)<input id="ownAccountPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></label>
+                <label class="full">Confirmar nueva contraseña<input id="ownAccountPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repite la nueva contraseña"></label>
+                <div class="form-actions full"><button class="primary" type="submit">Guardar cambios</button><button id="ownAccountCancel" class="secondary" type="button">Cerrar</button></div>
+                <p id="ownAccountStatus" class="muted full" role="status" aria-live="polite"></p>
+              </form>
+            </section>
+          </div>
+          '''
+              if '</main>' not in html:
+                  raise SystemExit("No se encontró el final del contenido principal para insertar Mi cuenta.")
+              html = html.replace('</main>', modal + '\n</main>', 1)
+
+          if '// DENTAL_JG_OWN_ACCOUNT_SETTINGS' not in js:
+              insertion = '''
+          // DENTAL_JG_OWN_ACCOUNT_SETTINGS
+          (() => {
+            const openButton = $("ownAccountOpen");
+            const modal = $("ownAccountModal");
+            const form = $("ownAccountForm");
+            if (!openButton || !modal || !form) throw new Error("No se pudo inicializar Mi cuenta.");
+            const close = () => modal.classList.add("hidden");
+            openButton.addEventListener("click", async () => {
+              if (role !== "admin") { note("Solo la cuenta de Administración puede cambiar sus propios datos desde este panel."); return; }
+              try {
+                const { data, error } = await db.auth.getUser();
+                if (error) throw error;
+                $("ownAccountEmail").value = data.user?.email || user?.email || "";
+                $("ownAccountPassword").value = "";
+                $("ownAccountPasswordConfirm").value = "";
+                $("ownAccountStatus").textContent = "";
+                modal.classList.remove("hidden");
+              } catch (error) {
+                note("No se pudo cargar tu cuenta: " + (error.message || "error desconocido"));
+              }
+            });
+            $("ownAccountCancel").addEventListener("click", close);
+            modal.addEventListener("click", event => { if (event.target === modal) close(); });
+            form.addEventListener("submit", async event => {
+              event.preventDefault();
+              if (role !== "admin") { $("ownAccountStatus").textContent = "Solo disponible para Administración."; return; }
+              const email = $("ownAccountEmail").value.trim().toLowerCase();
+              const password = $("ownAccountPassword").value;
+              const confirmation = $("ownAccountPasswordConfirm").value;
+              const status = $("ownAccountStatus");
+              const button = form.querySelector('button[type="submit"]');
+              if (password && password.length < 8) { status.textContent = "La contraseña debe tener al menos 8 caracteres."; return; }
+              if (password !== confirmation) { status.textContent = "Las contraseñas no coinciden."; return; }
+              if (!email) { status.textContent = "Escribe un correo válido."; return; }
+              const { data: currentData, error: currentError } = await db.auth.getUser();
+              if (currentError) { status.textContent = "No se pudo verificar la sesión: " + currentError.message; return; }
+              const currentEmail = String(currentData.user?.email || "").trim().toLowerCase();
+              const changes = {};
+              if (email !== currentEmail) changes.email = email;
+              if (password) changes.password = password;
+              if (!Object.keys(changes).length) { status.textContent = "No hay cambios que guardar."; return; }
+              if (!window.confirm("¿Confirmas guardar los cambios de tu cuenta?")) return;
+              button.disabled = true;
+              status.textContent = "Guardando cambios…";
+              try {
+                const { data, error } = await db.auth.updateUser(changes);
+                if (error) throw error;
+                if (password) {
+                  $("ownAccountPassword").value = "";
+                  $("ownAccountPasswordConfirm").value = "";
+                }
+                if (changes.email) {
+                  const returnedEmail = String(data.user?.email || "").trim().toLowerCase();
+                  status.textContent = returnedEmail === email
+                    ? "Solicitud de cambio de correo procesada. Si se requiere confirmación, abre el correo enviado a la nueva dirección."
+                    : "Supabase envió la solicitud de cambio de correo. Abre el mensaje de verificación enviado a la nueva dirección para completar el cambio." + (password ? " La contraseña también se actualizó." : "");
+                } else {
+                  status.textContent = "Contraseña actualizada correctamente.";
+                }
+                user = data.user || user;
+                $("userEmail").textContent = user?.email || email;
+              } catch (error) {
+                status.textContent = "No se pudieron guardar los cambios: " + (error.message || "error desconocido");
+              } finally {
+                button.disabled = false;
+              }
+            });
+          })();
+          '''
+              # Insert inside the main app IIFE, where db/user/role are available.
+              anchor = '$("logout").addEventListener("click", async () => {'
+              if anchor not in js:
+                  raise SystemExit("No se encontró el manejador de sesión para integrar Mi cuenta.")
+              js = js.replace(anchor, insertion + '\n' + anchor, 1)
+
+          html_path.write_text(html, encoding="utf-8")
+          js_path.write_text(js, encoding="utf-8")
+          print("Mi cuenta añadido al panel: correo y contraseña propios, sin tocar roles.")
+          PY
+
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
