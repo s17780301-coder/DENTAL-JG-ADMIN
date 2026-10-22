@@ -747,10 +747,10 @@ jobs:
           index = Path("public/index.html")
           html = index.read_text(encoding="utf-8")
           cache_version = "1.0.5-turquesa2"
-          html, changed = re.subn(r'styles\\.css(?:\\?v=[^"\\']*)?', 'styles.css?v=' + cache_version, html, count=1)
+          html, changed = re.subn(r'styles\.css(?:\?v=[^"\']*)?', 'styles.css?v=' + cache_version, html, count=1)
           if changed != 1:
               raise SystemExit("No se pudo forzar una nueva URL de caché para styles.css.")
-          html, app_changed = re.subn(r'app\\.js(?:\\?v=[^"\\']*)?', 'app.js?v=' + cache_version, html, count=1)
+          html, app_changed = re.subn(r'app\.js(?:\?v=[^"\']*)?', 'app.js?v=' + cache_version, html, count=1)
           if app_changed != 1:
               print("Aviso: no se encontró app.js para actualizar la caché.")
           index.write_text(html, encoding="utf-8")
