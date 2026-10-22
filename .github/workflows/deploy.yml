@@ -598,6 +598,23 @@ jobs:
             --blue: #079b87 !important;
           }
           /* Sobrescribir los azules del diseño original, incluidos fondos y cabeceras. */
+          /* Sobrescribir también clases reales del paquete ZIP, aunque no usen nombres estándar. */
+          body {
+            background-color: #eef9f6 !important;
+          }
+          :where([class*="hero"], [class*="Hero"], [class*="banner"], [class*="Banner"], [class*="header"], [class*="Header"], [class*="welcome"], [class*="Welcome"], [class*="brand"], [class*="Brand"]) {
+            --primary: #079b87 !important;
+            --accent: #16b8a6 !important;
+          }
+          :where([class*="hero"], [class*="Hero"], [class*="banner"], [class*="Banner"], [class*="welcome"], [class*="Welcome"])::before,
+          :where([class*="hero"], [class*="Hero"], [class*="banner"], [class*="Banner"], [class*="welcome"], [class*="Welcome"])::after {
+            border-color: #16b8a6 !important;
+          }
+          /* Forzar el color turquesa en botones, títulos de marca y enlaces incluso si el CSS base es más específico. */
+          body :where(button, [role="button"], .btn, a[ class ]) {
+            accent-color: #079b87;
+          }
+
           :where(.hero, .hero-section, .hero-header, .top-banner, .banner, .brand-banner, header, .app-header, .page-header, .login-header, .welcome-header) {
             background: linear-gradient(120deg, #087f72 0%, #0aa895 55%, #19b8a7 100%) !important;
             border-color: #16b8a6 !important;
