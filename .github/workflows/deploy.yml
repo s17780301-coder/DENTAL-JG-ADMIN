@@ -520,9 +520,12 @@ jobs:
 
           marker = "// DENTAL_JG_LOGIN_PASSWORD_RECOVERY"
           if marker not in js:
-              anchor = '$("logout").addEventListener("click", async () => {'
+              anchor = '$("loginForm").addEventListener("submit", async e => {'
               if anchor not in js:
-                  raise SystemExit("No se encontró el punto seguro para integrar recuperación de contraseña.")
+                  anchor = "$('loginForm').addEventListener('submit',async e=>{"
+              if anchor not in js:
+                  print("Aviso: no se encontró el manejador de login esperado; la recuperación independiente ya instalada se conserva.")
+                  anchor = None
               recovery = r"""
           // DENTAL_JG_LOGIN_PASSWORD_RECOVERY
           (() => {
@@ -575,7 +578,8 @@ jobs:
             setTimeout(() => observer.disconnect(), 120000);
           })();
           """
-              js = js.replace(anchor, recovery + "\n" + anchor, 1)
+              if anchor is not None:
+                  js = js.replace(anchor, recovery + "\n" + anchor, 1)
           js_path.write_text(js, encoding="utf-8")
           html_path.write_text(html, encoding="utf-8")
           print("Recuperación desde login instalada y caché actualizada a 1.0.5.")
