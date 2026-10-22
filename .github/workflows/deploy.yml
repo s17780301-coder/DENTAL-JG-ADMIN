@@ -518,7 +518,7 @@ jobs:
 
           marker = "// DENTAL_JG_LOGIN_PASSWORD_RECOVERY"
           if marker not in js:
-              anchor = "$('logout').addEventListener('click', async () => {"
+              anchor = '$("logout").addEventListener("click", async () => {'
               if anchor not in js:
                   raise SystemExit("No se encontró el punto seguro para integrar recuperación de contraseña.")
               recovery = r"""
