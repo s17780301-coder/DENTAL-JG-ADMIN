@@ -527,19 +527,20 @@ jobs:
             const emailInput = $('email');
             const passwordInput = $('password');
             if (!emailInput || !passwordInput) {
-              throw new Error("No se encontraron los campos de acceso para habilitar la recuperación.");
+              console.warn("DENTAL JG: el formulario de acceso aún no existe; se conserva la aplicación y se omite el enlace hasta que esté disponible.");
+              return;
             }
             if (document.getElementById('dentalJgForgotPassword')) return;
             const button = document.createElement('button');
             button.id = 'dentalJgForgotPassword';
             button.type = 'button';
             button.textContent = 'Olvidé mi contraseña';
-            button.style.cssText = 'display:block;width:100%;margin-top:12px;padding:12px 16px;border:1px solid #0b928b;border-radius:12px;background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer';
+            button.style.cssText = 'display:block;box-sizing:border-box;width:100%;min-height:46px;margin-top:12px;padding:12px 16px;border:1px solid #078f80;border-radius:12px;background:#eaf9f5;color:#075e58;font:inherit;font-weight:800;cursor:pointer;opacity:1;visibility:visible';
             const status = document.createElement('p');
             status.id = 'dentalJgForgotPasswordStatus';
             status.setAttribute('role', 'status');
             status.setAttribute('aria-live', 'polite');
-            status.style.cssText = 'margin:10px 0 0;overflow-wrap:anywhere;font-size:.95em';
+            status.style.cssText = 'margin:10px 0 0;overflow-wrap:anywhere;font-size:.95em;color:#315d58;line-height:1.45';
             const loginArea = emailInput.closest('form') || $('loginForm') || passwordInput.parentElement?.parentElement;
             if (!loginArea) throw new Error("No se encontró el formulario de acceso.");
             loginArea.appendChild(button);
@@ -571,33 +572,6 @@ jobs:
           js_path.write_text(js, encoding="utf-8")
           html_path.write_text(html, encoding="utf-8")
           print("Recuperación desde login instalada y caché actualizada a 1.0.5.")
-          PY
-
-          # Diagnóstico temporal para localizar el contenedor de portada y el formulario de acceso.
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          html = Path("public/index.html").read_text(encoding="utf-8")
-          css = Path("public/styles.css").read_text(encoding="utf-8")
-          js = Path("public/app.js").read_text(encoding="utf-8")
-          for marker in ("PLATAFORMA INTEGRAL", "Selecciona el área", "Registro de clientes", "Olvidé mi contraseña", "Recuperar cuenta"):
-              pos = html.lower().find(marker.lower())
-              if pos >= 0:
-                  print("\n=== HTML AROUND " + marker + " ===")
-                  print(html[max(0,pos-900):pos+500].replace("\n"," ")[:1600])
-              else:
-                  print("\nHTML marker not found: " + marker)
-          print("\n=== HTML LOGIN IDS ===")
-          print(" ".join(sorted(set(re.findall(r"""(?:id|name|for)=["']([^"']*(?:email|password|login|forgot|recover)[^"']*)["']""", html, re.I)))))
-          print("\n=== APP RECOVERY / LOGIN REFERENCES ===")
-          for marker in ("DENTAL_JG_LOGIN_PASSWORD_RECOVERY", "dentalJgForgotPassword", '("email")', '("password")', 'loginForm'):
-              p = js.find(marker)
-              print(marker + ": " + (js[max(0,p-200):p+700].replace("\n"," ")[:900] if p >= 0 else "not found"))
-          print("\n=== CSS RULES WITH HERO / HEADER / BRAND / CARD ===")
-          for rule in re.finditer(r'([^{}]+)\{([^{}]*)\}', css):
-              sel, body = rule.group(1).strip(), rule.group(2).strip()
-              if re.search(r'hero|header|brand|card|intro|welcome|banner|primary|#(?:[0-9a-f]{3,8})', sel, re.I) and re.search(r'background|color|gradient', body, re.I):
-                  print(sel[:260] + " => " + body[:350])
           PY
 
           # Recolorear los colores azules existentes EN LOS ARCHIVOS REALES del paquete,
@@ -737,9 +711,23 @@ jobs:
             accent-color: #079b87;
           }
 
-          :where(.hero, .hero-section, .hero-header, .top-banner, .banner, .brand-banner, header, .app-header, .page-header, .login-header, .welcome-header) {
-            background: linear-gradient(120deg, #087f72 0%, #0aa895 55%, #19b8a7 100%) !important;
-            border-color: #16b8a6 !important;
+          /* Cabecera de portada: conservar la tarjeta clara para que los textos tengan contraste. */
+          .portal-header {
+            background: #ffffffed !important;
+            color: #164b46 !important;
+            border: 1px solid #c7eae3 !important;
+            box-shadow: 0 18px 55px #123e5b18 !important;
+          }
+          .portal-header .eyebrow,
+          .portal-header .portal-subtitle {
+            opacity: 1 !important;
+            text-shadow: none !important;
+          }
+          .portal-header .eyebrow {
+            color: #078f80 !important;
+          }
+          .portal-header .portal-subtitle {
+            color: #587a76 !important;
           }
           :where(a, .link) { color: #078f80 !important; }
           :where(.primary, .btn-primary, button.primary, button[type="submit"], .button-primary, .active, .selected, [aria-current="page"]) {
