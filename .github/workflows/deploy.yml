@@ -389,16 +389,18 @@ jobs:
           js = js_path.read_text(encoding="utf-8")
 
           nav_marker = '<div class="profile">'
-          if 'id="ownAccountOpen"' not in html:
+          if 'id="ownAccountOpen"' not in html and 'id="ownAccountForm"' not in html:
               if nav_marker not in html:
-                  raise SystemExit("No se encontró el perfil lateral para añadir Mi cuenta.")
-              html = html.replace(nav_marker, nav_marker, 1)
-              profile_end = html.find('</div>', html.find(nav_marker))
-              if profile_end < 0:
-                  raise SystemExit("No se pudo localizar el bloque de perfil.")
-              profile_end += len('</div>')
-              html = html[:profile_end] + '\n    <button id="ownAccountOpen" class="secondary" type="button" style="width:100%;margin:10px 0">Mi cuenta y contraseña</button>\n' + html[profile_end:]
-
+                  print("Aviso: el HTML no usa el perfil lateral esperado; se conserva la interfaz existente de cuenta.")
+              else:
+                  profile_start = html.find(nav_marker)
+                  profile_end = html.find('</div>', profile_start)
+                  if profile_end < 0:
+                      print("Aviso: no se pudo identificar el perfil lateral; se conserva la interfaz existente.")
+                  else:
+                      profile_end += len('</div>')
+                      html = html[:profile_end] + '\n    <button id="ownAccountOpen" class="secondary" type="button" style="width:100%;margin:10px 0">Mi cuenta y contraseña</button>\n' + html[profile_end:]
+          
           if 'id="ownAccountModal"' not in html:
               modal = '''
           <div id="ownAccountModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="ownAccountTitle" style="position:fixed;inset:0;z-index:10000;background:rgba(5,15,22,.78);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto">
@@ -418,7 +420,7 @@ jobs:
                   raise SystemExit("No se encontró el final del contenido principal para insertar Mi cuenta.")
               html = html.replace('</main>', modal + '\n</main>', 1)
 
-          if '// DENTAL_JG_OWN_ACCOUNT_SETTINGS' not in js:
+          if '// DENTAL_JG_OWN_ACCOUNT_SETTINGS' not in js and 'id="ownAccountForm"' not in html:
               insertion = '''
           // DENTAL_JG_OWN_ACCOUNT_SETTINGS
           (() => {
