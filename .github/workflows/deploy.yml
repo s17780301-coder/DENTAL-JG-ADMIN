@@ -573,6 +573,101 @@ jobs:
           print("Recuperación desde login instalada y caché actualizada a 1.0.5.")
           PY
 
+          # Recolorear los colores azules existentes EN LOS ARCHIVOS REALES del paquete,
+          # incluidos gradientes y estilos en línea. Esto no depende de adivinar clases CSS.
+          python3 - <<'PY'
+          from pathlib import Path
+          import colorsys
+          import re
+
+          targets = [Path("public/styles.css"), Path("public/index.html"), Path("public/app.js")]
+          changed_total = 0
+
+          def recolor(rgb):
+              global changed_total
+              r, g, b = [v / 255 for v in rgb]
+              h, sat, val = colorsys.rgb_to_hsv(r, g, b)
+              # Mover únicamente tonos azules/cian-azulados a turquesa; preservar grises y colores cálidos.
+              if sat < 0.16 or not (0.515 <= h <= 0.735):
+                  return rgb
+              nh = 0.475
+              nr, ng, nb = colorsys.hsv_to_rgb(nh, sat, val)
+              out = tuple(round(v * 255) for v in (nr, ng, nb))
+              if out != rgb:
+                  changed_total += 1
+              return out
+
+          def hex_repl(m):
+              token = m.group(0)
+              raw = token[1:]
+              if len(raw) == 3:
+                  rgb = tuple(int(ch * 2, 16) for ch in raw)
+                  out = recolor(rgb)
+                  return "#" + "".join(f"{v:02x}" for v in out)
+              if len(raw) == 4:
+                  rgb = tuple(int(ch * 2, 16) for ch in raw[:3])
+                  out = recolor(rgb)
+                  return "#" + "".join(f"{v:02x}" for v in out) + raw[3].lower()
+              if len(raw) in (6, 8):
+                  rgb = tuple(int(raw[i:i+2], 16) for i in (0, 2, 4))
+                  out = recolor(rgb)
+                  suffix = raw[6:].lower() if len(raw) == 8 else ""
+                  return "#" + "".join(f"{v:02x}" for v in out) + suffix
+              return token
+
+          def rgb_repl(m):
+              token = m.group(0)
+              nums = re.findall(r"[-+]?(?:\d*\.\d+|\d+)%?", token)
+              if len(nums) < 3:
+                  return token
+              vals = []
+              for n in nums[:3]:
+                  if n.endswith("%"):
+                      vals.append(round(float(n[:-1]) * 2.55))
+                  else:
+                      vals.append(round(float(n)))
+              if any(v < 0 or v > 255 for v in vals):
+                  return token
+              out = recolor(tuple(vals))
+              # Mantener alpha, separadores y sintaxis del color del original no es necesario visualmente;
+              # emitir RGB estándar compatible con CSS.
+              alpha = ""
+              if len(nums) >= 4:
+                  alpha = ", " + nums[3]
+              return "rgb(" + ", ".join(map(str, out)) + alpha + ")"
+
+          def hsl_repl(m):
+              global changed_total
+              token = m.group(0)
+              nums = re.findall(r"[-+]?(?:\d*\.\d+|\d+)%?", token)
+              if len(nums) < 3:
+                  return token
+              try:
+                  hue = float(nums[0]) % 360
+                  sat = float(nums[1].rstrip("%")) / (100 if nums[1].endswith("%") else 1)
+                  light = float(nums[2].rstrip("%")) / (100 if nums[2].endswith("%") else 1)
+              except ValueError:
+                  return token
+              if not (185 <= hue <= 265 and sat >= 0.16):
+                  return token
+              changed_total += 1
+              return f"hsl(171, {sat*100:.1f}%, {light*100:.1f}%)"
+
+          for path in targets:
+              if not path.is_file():
+                  continue
+              original = path.read_text(encoding="utf-8")
+              out = re.sub(r"#[0-9a-fA-F]{3,8}\b", hex_repl, original)
+              out = re.sub(r"rgba?\([^)]*\)", rgb_repl, out, flags=re.I)
+              out = re.sub(r"hsla?\([^)]*\)", hsl_repl, out, flags=re.I)
+              if out != original:
+                  path.write_text(out, encoding="utf-8")
+                  print(f"Colores azules actualizados en {path}: {len(original)} -> {len(out)} caracteres.")
+          print(f"Colores azulados convertidos a turquesa: {changed_total}")
+          if changed_total == 0:
+              print("Aviso: no se encontraron colores literales azules; revisar si la página usa colores externos o canvas.")
+          PY
+
           # Aplicar tema verde turquesa sin reemplazar la estructura ni el comportamiento del panel.
           python3 - <<'PY'
           from pathlib import Path
