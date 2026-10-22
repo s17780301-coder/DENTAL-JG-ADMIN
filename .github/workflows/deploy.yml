@@ -573,6 +573,68 @@ jobs:
           print("Recuperación desde login instalada y caché actualizada a 10.8.103.")
           PY
 
+          # Aplicar tema verde turquesa sin reemplazar la estructura ni el comportamiento del panel.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          css = Path("public/styles.css")
+          if not css.is_file():
+              raise SystemExit("No se encontró public/styles.css; se cancela el despliegue para evitar publicar un tema incompleto.")
+          source = css.read_text(encoding="utf-8")
+          marker = "/* DENTAL_JG_TURQUOISE_THEME */"
+          if marker not in source:
+              source += r"""
+
+          /* DENTAL_JG_TURQUOISE_THEME */
+          :root {
+            --primary: #079b87;
+            --primary-color: #079b87;
+            --accent: #16b8a6;
+            --accent-color: #16b8a6;
+            --brand: #078f80;
+            --focus: #21bfae;
+            --link: #078f80;
+            --blue: #079b87;
+          }
+          :where(a, .link, .primary, .btn-primary, button.primary, [type="submit"], .active, .selected, [aria-current="page"]) {
+            --primary: #079b87;
+            --accent: #16b8a6;
+          }
+          :where(a, .link) { color: #078f80; }
+          :where(button.primary, .btn-primary, button[type="submit"], .primary) {
+            background-color: #079b87;
+            border-color: #079b87;
+          }
+          :where(button.primary, .btn-primary, button[type="submit"], .primary):hover {
+            background-color: #067d70;
+            border-color: #067d70;
+          }
+          :where(input, select, textarea, button, a):focus-visible {
+            outline-color: #16b8a6;
+            box-shadow: 0 0 0 3px rgb(22 184 166 / 20%);
+          }
+          :where(.badge, .status-dot, .success, .online, .nav-link.active, .tab.active) {
+            --primary: #079b87;
+            --accent: #16b8a6;
+          }
+          """
+              css.write_text(source, encoding="utf-8")
+              print("Tema verde turquesa aplicado a estilos del panel.")
+          else:
+              print("Tema verde turquesa ya presente; no se duplica.")
+
+          # Incrementar la versión del CSS para evitar que el móvil reutilice colores antiguos.
+          index = Path("public/index.html")
+          html = index.read_text(encoding="utf-8")
+          if 'styles.css?v=10.8.104' not in html:
+              html, changed = re.subn(r'styles\.css(?:\?v=[^"\']*)?', 'styles.css?v=10.8.104', html, count=1)
+              if changed != 1:
+                  raise SystemExit("No se pudo actualizar la versión de caché de styles.css.")
+              index.write_text(html, encoding="utf-8")
+          print("Caché de estilos actualizada a 10.8.104.")
+          PY
+
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
