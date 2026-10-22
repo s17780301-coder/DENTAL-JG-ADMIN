@@ -500,6 +500,79 @@ jobs:
           print("Mi cuenta añadido al panel: correo y contraseña propios, sin tocar roles.")
           PY
 
+          # Añadir recuperación de contraseña desde la pantalla de inicio de sesión.
+          # No cambia usuarios ni contraseñas; solicita a Supabase que envíe un enlace seguro.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          html_path = Path("public/index.html")
+          js_path = Path("public/app.js")
+          html = html_path.read_text(encoding="utf-8")
+          js = js_path.read_text(encoding="utf-8")
+
+          # La versión de caché se incrementa para que los teléfonos no reutilicen el JS anterior.
+          html, changed = re.subn(r'app\\.js\\?v=[^"\\']+', 'app.js?v=10.8.103', html, count=1)
+          if changed != 1:
+              raise SystemExit("No se pudo actualizar la versión de caché para la recuperación de contraseña.")
+
+          marker = "// DENTAL_JG_LOGIN_PASSWORD_RECOVERY"
+          if marker not in js:
+              anchor = "$('logout').addEventListener('click', async () => {"
+              if anchor not in js:
+                  raise SystemExit("No se encontró el punto seguro para integrar recuperación de contraseña.")
+              recovery = r"""
+          // DENTAL_JG_LOGIN_PASSWORD_RECOVERY
+          (() => {
+            const emailInput = $('email');
+            const passwordInput = $('password');
+            if (!emailInput || !passwordInput) {
+              throw new Error("No se encontraron los campos de acceso para habilitar la recuperación.");
+            }
+            if (document.getElementById('dentalJgForgotPassword')) return;
+            const button = document.createElement('button');
+            button.id = 'dentalJgForgotPassword';
+            button.type = 'button';
+            button.textContent = 'Olvidé mi contraseña';
+            button.style.cssText = 'display:block;width:100%;margin-top:12px;padding:12px 16px;border:1px solid #0b928b;border-radius:12px;background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer';
+            const status = document.createElement('p');
+            status.id = 'dentalJgForgotPasswordStatus';
+            status.setAttribute('role', 'status');
+            status.setAttribute('aria-live', 'polite');
+            status.style.cssText = 'margin:10px 0 0;overflow-wrap:anywhere;font-size:.95em';
+            const loginArea = emailInput.closest('form') || $('loginForm') || passwordInput.parentElement?.parentElement;
+            if (!loginArea) throw new Error("No se encontró el formulario de acceso.");
+            loginArea.appendChild(button);
+            loginArea.appendChild(status);
+            button.addEventListener('click', async () => {
+              const email = String(emailInput.value || '').trim().toLowerCase();
+              if (!email) {
+                status.textContent = 'Escribe primero el correo de tu cuenta y vuelve a pulsar aquí.';
+                emailInput.focus();
+                return;
+              }
+              button.disabled = true;
+              status.textContent = 'Solicitando el enlace seguro a Supabase…';
+              try {
+                const { error } = await db.auth.resetPasswordForEmail(email, {
+                  redirectTo: window.location.origin + window.location.pathname
+                });
+                if (error) throw error;
+                status.textContent = 'Si el correo corresponde a una cuenta, Supabase enviará un enlace para restablecer la contraseña. Revisa también spam y correo no deseado.';
+              } catch (error) {
+                status.textContent = 'No se pudo solicitar el enlace: ' + (error?.message || 'error desconocido') + '. Comprueba que la URL del panel esté permitida en Supabase Authentication > URL Configuration.';
+              } finally {
+                button.disabled = false;
+              }
+            });
+          })();
+          """
+              js = js.replace(anchor, recovery + "\\n" + anchor, 1)
+          js_path.write_text(js, encoding="utf-8")
+          html_path.write_text(html, encoding="utf-8")
+          print("Recuperación desde login instalada y caché actualizada a 10.8.103.")
+          PY
+
           test -s public/index.html
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
