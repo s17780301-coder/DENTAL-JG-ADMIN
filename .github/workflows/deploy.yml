@@ -588,13 +588,13 @@ jobs:
               else:
                   print("\nHTML marker not found: " + marker)
           print("\n=== HTML LOGIN IDS ===")
-          print(" ".join(sorted(set(re.findall(r'(?:id|name|for)=["\\']([^"\\']*(?:email|password|login|forgot|recover)[^"\\']*)["\\']', html, re.I)))))
+          print(" ".join(sorted(set(re.findall(r"""(?:id|name|for)=["']([^"']*(?:email|password|login|forgot|recover)[^"']*)["']""", html, re.I)))))
           print("\n=== APP RECOVERY / LOGIN REFERENCES ===")
           for marker in ("DENTAL_JG_LOGIN_PASSWORD_RECOVERY", "dentalJgForgotPassword", '("email")', '("password")', 'loginForm'):
               p = js.find(marker)
               print(marker + ": " + (js[max(0,p-200):p+700].replace("\n"," ")[:900] if p >= 0 else "not found"))
           print("\n=== CSS RULES WITH HERO / HEADER / BRAND / CARD ===")
-          for rule in re.finditer(r'([^{}]+)\\{([^{}]*)\\}', css):
+          for rule in re.finditer(r'([^{}]+)\{([^{}]*)\}', css):
               sel, body = rule.group(1).strip(), rule.group(2).strip()
               if re.search(r'hero|header|brand|card|intro|welcome|banner|primary|#(?:[0-9a-f]{3,8})', sel, re.I) and re.search(r'background|color|gradient', body, re.I):
                   print(sel[:260] + " => " + body[:350])
