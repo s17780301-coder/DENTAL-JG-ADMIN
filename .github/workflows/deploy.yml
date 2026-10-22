@@ -769,6 +769,55 @@ jobs:
           else:
               print("Tema verde turquesa ya presente; no se duplica.")
 
+          # Corrección final de la tarjeta central: se aplica en cada despliegue,
+          # incluso si el bloque de tema turquesa ya existía en styles.css.
+          css = Path("public/styles.css")
+          source = css.read_text(encoding="utf-8")
+          fix_marker = "/* DENTAL_JG_PORTAL_WHITE_FIX_2 */"
+          if fix_marker in source:
+              source = source[:source.index(fix_marker)].rstrip()
+          source += r"""
+
+          /* DENTAL_JG_PORTAL_WHITE_FIX_2 */
+          #appPicker > .portal-header,
+          #appPicker header.portal-header,
+          body #appPicker .portal-wrap .portal-header {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            background-image: none !important;
+            color: #173b59 !important;
+            opacity: 1 !important;
+            filter: none !important;
+            mix-blend-mode: normal !important;
+            isolation: isolate !important;
+          }
+          #appPicker > .portal-header::before,
+          #appPicker > .portal-header::after,
+          #appPicker header.portal-header::before,
+          #appPicker header.portal-header::after {
+            content: none !important;
+            display: none !important;
+            background: none !important;
+            background-image: none !important;
+          }
+          #appPicker .portal-header .portal-brand,
+          #appPicker .portal-header #portalTitle,
+          #appPicker .portal-header .eyebrow {
+            color: #087f75 !important;
+            opacity: 1 !important;
+            -webkit-text-fill-color: #087f75 !important;
+            text-shadow: none !important;
+          }
+          #appPicker .portal-header .portal-subtitle {
+            color: #587a76 !important;
+            opacity: 1 !important;
+            -webkit-text-fill-color: #587a76 !important;
+            text-shadow: none !important;
+          }
+          """
+          css.write_text(source, encoding="utf-8")
+          print("Corrección de tarjeta blanca aplicada al final de styles.css.")
+
           # Incrementar la versión del CSS para evitar que el móvil reutilice colores antiguos.
           index = Path("public/index.html")
           html = index.read_text(encoding="utf-8")
