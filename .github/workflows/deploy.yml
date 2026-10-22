@@ -647,9 +647,9 @@ jobs:
           html = re.sub(r'<div id="dental-jg-build-version"[^>]*>.*?</div>', '', html, flags=re.I|re.S)
           if "</body>" not in html.lower():
               raise SystemExit("No se encontró </body>; no se publicará una versión sin indicador visible.")
-          html = re.sub(r'</body>', badge + '\\n</body>', html, count=1, flags=re.I)
+          html = re.sub(r'</body>', badge + '\n</body>', html, count=1, flags=re.I)
           html = re.sub(r'<title>.*?</title>', f'<title>DENTAL JG · Versión {version}</title>', html, count=1, flags=re.I|re.S)
-          html = html.replace('</head>', '<meta name="dental-jg-version" content="' + version + '"><style>#' + badge_id + '{position:fixed;right:10px;bottom:10px;z-index:100000;padding:7px 11px;border:1px solid #8bded1;border-radius:999px;background:#e8faf5;color:#087f72;font:600 11px/1.2 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 10px #073b3220;pointer-events:none}</style>\\n</head>', 1)
+          html = html.replace('</head>', '<meta name="dental-jg-version" content="' + version + '"><style>#' + badge_id + '{position:fixed;right:10px;bottom:10px;z-index:100000;padding:7px 11px;border:1px solid #8bded1;border-radius:999px;background:#e8faf5;color:#087f72;font:600 11px/1.2 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 10px #073b3220;pointer-events:none}</style>\n</head>', 1)
           html_path.write_text(html, encoding="utf-8")
           print("Indicador visible de versión instalado: DENTAL JG 10.8.104")
           PY
