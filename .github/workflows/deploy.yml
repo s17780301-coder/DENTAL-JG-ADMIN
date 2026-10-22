@@ -512,7 +512,7 @@ jobs:
           js = js_path.read_text(encoding="utf-8")
 
           # La versión de caché se incrementa para que los teléfonos no reutilicen el JS anterior.
-          html, changed = re.subn(r'app[.]js[?]v=[^"]+', 'app.js?v=10.8.103', html, count=1)
+          html, changed = re.subn('app[.]js[?]v=[^"]+', 'app.js?v=10.8.103', html, count=1)
           if changed != 1:
               raise SystemExit("No se pudo actualizar la versión de caché para la recuperación de contraseña.")
 
