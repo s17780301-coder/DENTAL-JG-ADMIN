@@ -524,48 +524,53 @@ jobs:
               recovery = r"""
           // DENTAL_JG_LOGIN_PASSWORD_RECOVERY
           (() => {
-            const emailInput = $('email');
-            const passwordInput = $('password');
-            if (!emailInput || !passwordInput) {
-              console.warn("DENTAL JG: el formulario de acceso aún no existe; se conserva la aplicación y se omite el enlace hasta que esté disponible.");
-              return;
-            }
-            if (document.getElementById('dentalJgForgotPassword')) return;
-            const button = document.createElement('button');
-            button.id = 'dentalJgForgotPassword';
-            button.type = 'button';
-            button.textContent = 'Olvidé mi contraseña';
-            button.style.cssText = 'display:block;box-sizing:border-box;width:100%;min-height:46px;margin-top:12px;padding:12px 16px;border:1px solid #078f80;border-radius:12px;background:#eaf9f5;color:#075e58;font:inherit;font-weight:800;cursor:pointer;opacity:1;visibility:visible';
-            const status = document.createElement('p');
-            status.id = 'dentalJgForgotPasswordStatus';
-            status.setAttribute('role', 'status');
-            status.setAttribute('aria-live', 'polite');
-            status.style.cssText = 'margin:10px 0 0;overflow-wrap:anywhere;font-size:.95em;color:#315d58;line-height:1.45';
-            const loginArea = emailInput.closest('form') || $('loginForm') || passwordInput.parentElement?.parentElement;
-            if (!loginArea) throw new Error("No se encontró el formulario de acceso.");
-            loginArea.appendChild(button);
-            loginArea.appendChild(status);
-            button.addEventListener('click', async () => {
-              const email = String(emailInput.value || '').trim().toLowerCase();
-              if (!email) {
-                status.textContent = 'Escribe primero el correo de tu cuenta y vuelve a pulsar aquí.';
-                emailInput.focus();
-                return;
-              }
-              button.disabled = true;
-              status.textContent = 'Solicitando el enlace seguro a Supabase…';
-              try {
-                const { error } = await db.auth.resetPasswordForEmail(email, {
-                  redirectTo: window.location.origin + window.location.pathname
-                });
-                if (error) throw error;
-                status.textContent = 'Si el correo corresponde a una cuenta, Supabase enviará un enlace para restablecer la contraseña. Revisa también spam y correo no deseado.';
-              } catch (error) {
-                status.textContent = 'No se pudo solicitar el enlace: ' + (error?.message || 'error desconocido') + '. Comprueba que la URL del panel esté permitida en Supabase Authentication > URL Configuration.';
-              } finally {
-                button.disabled = false;
-              }
+            const installRecovery = () => {
+              const emailInput = $('email') || $('userEmail') || $('ownAccountEmail');
+              const passwordInput = $('password') || $('userPassword') || $('ownAccountPassword');
+              if (!emailInput || !passwordInput || document.getElementById('dentalJgForgotPassword')) return false;
+              const loginArea = emailInput.closest('form') || $('loginForm') || passwordInput.parentElement?.parentElement;
+              if (!loginArea) return false;
+              const button = document.createElement('button');
+              button.id = 'dentalJgForgotPassword';
+              button.type = 'button';
+              button.textContent = 'Olvidé mi contraseña';
+              button.style.cssText = 'display:block!important;visibility:visible!important;opacity:1!important;box-sizing:border-box;width:100%;min-height:46px;margin-top:12px;padding:12px 16px;border:1px solid #078f80;border-radius:12px;background:#eaf9f5;color:#075e58;font:inherit;font-weight:800;cursor:pointer';
+              const status = document.createElement('p');
+              status.id = 'dentalJgForgotPasswordStatus';
+              status.setAttribute('role', 'status');
+              status.setAttribute('aria-live', 'polite');
+              status.style.cssText = 'margin:10px 0 0;overflow-wrap:anywhere;font-size:.95em;color:#315d58;line-height:1.45';
+              loginArea.appendChild(button);
+              loginArea.appendChild(status);
+              button.addEventListener('click', async () => {
+                const email = String(emailInput.value || '').trim().toLowerCase();
+                if (!email) {
+                  status.textContent = 'Escribe primero el correo de tu cuenta y vuelve a pulsar aquí.';
+                  emailInput.focus();
+                  return;
+                }
+                button.disabled = true;
+                status.textContent = 'Solicitando el enlace seguro a Supabase…';
+                try {
+                  const { error } = await db.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + window.location.pathname
+                  });
+                  if (error) throw error;
+                  status.textContent = 'Si el correo corresponde a una cuenta, recibirás un enlace para restablecer la contraseña. Revisa también spam.';
+                } catch (error) {
+                  status.textContent = 'No se pudo solicitar el enlace: ' + (error?.message || 'error desconocido') + '. Comprueba las URL permitidas en Supabase Authentication > URL Configuration.';
+                } finally {
+                  button.disabled = false;
+                }
+              });
+              return true;
+            };
+            if (installRecovery()) return;
+            const observer = new MutationObserver(() => {
+              if (installRecovery()) observer.disconnect();
             });
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+            setTimeout(() => observer.disconnect(), 120000);
           })();
           """
               js = js.replace(anchor, recovery + "\n" + anchor, 1)
@@ -712,23 +717,29 @@ jobs:
           }
 
           /* Cabecera de portada: conservar la tarjeta clara para que los textos tengan contraste. */
-          .portal-header {
-            background: #ffffffed !important;
-            color: #164b46 !important;
-            border: 1px solid #c7eae3 !important;
+          /* La portada debe conservar la tarjeta blanca; el degradado solo vive en el fondo superior. */
+          #appPicker .portal-header {
+            background: #ffffff !important;
+            background-image: none !important;
+            color: #173b59 !important;
+            border: 1px solid #d7e9ef !important;
             box-shadow: 0 18px 55px #123e5b18 !important;
+            opacity: 1 !important;
           }
-          .portal-header .eyebrow,
-          .portal-header .portal-subtitle {
+          #appPicker .portal-header .portal-brand,
+          #appPicker .portal-header #portalTitle,
+          #appPicker .portal-header .eyebrow {
+            color: #087f75 !important;
             opacity: 1 !important;
             text-shadow: none !important;
           }
-          .portal-header .eyebrow {
-            color: #078f80 !important;
-          }
-          .portal-header .portal-subtitle {
+          #appPicker .portal-header .portal-subtitle {
             color: #587a76 !important;
+            opacity: 1 !important;
+            text-shadow: none !important;
           }
+          #appPicker .app-name { color: #18375b !important; }
+          #appPicker .app-description { color: #607f8e !important; }
           :where(a, .link) { color: #078f80 !important; }
           :where(.primary, .btn-primary, button.primary, button[type="submit"], .button-primary, .active, .selected, [aria-current="page"]) {
             background-color: #079b87 !important;
