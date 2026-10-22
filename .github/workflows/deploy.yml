@@ -371,7 +371,7 @@ jobs:
 
           index = Path("public/index.html")
           html = index.read_text(encoding="utf-8")
-          html, changed = re.subn(r'app\.js\?v=[^"\']+', 'app.js?v=1.05', html, count=1)
+          html, changed = re.subn(r'app\.js\?v=[^"\']+', 'app.js?v=1.0.5', html, count=1)
           if changed != 1:
               raise SystemExit("No se pudo actualizar la versión de caché de app.js.")
           index.write_text(html, encoding="utf-8")
@@ -512,7 +512,7 @@ jobs:
           js = js_path.read_text(encoding="utf-8")
 
           # La versión de caché se incrementa para que los teléfonos no reutilicen el JS anterior.
-          html, changed = re.subn('app[.]js[?]v=[^"]+', 'app.js?v=1.05', html, count=1)
+          html, changed = re.subn('app[.]js[?]v=[^"]+', 'app.js?v=1.0.5', html, count=1)
           if changed != 1:
               raise SystemExit("No se pudo actualizar la versión de caché para la recuperación de contraseña.")
 
@@ -570,7 +570,7 @@ jobs:
               js = js.replace(anchor, recovery + "\n" + anchor, 1)
           js_path.write_text(js, encoding="utf-8")
           html_path.write_text(html, encoding="utf-8")
-          print("Recuperación desde login instalada y caché actualizada a 1.05.")
+          print("Recuperación desde login instalada y caché actualizada a 1.0.5.")
           PY
 
           # Aplicar tema verde turquesa sin reemplazar la estructura ni el comportamiento del panel.
@@ -627,12 +627,12 @@ jobs:
           # Incrementar la versión del CSS para evitar que el móvil reutilice colores antiguos.
           index = Path("public/index.html")
           html = index.read_text(encoding="utf-8")
-          if 'styles.css?v=1.05' not in html:
-              html, changed = re.subn(r'styles\.css(?:\?v=[^"\']*)?', 'styles.css?v=1.05', html, count=1)
+          if 'styles.css?v=1.0.5' not in html:
+              html, changed = re.subn(r'styles\.css(?:\?v=[^"\']*)?', 'styles.css?v=1.0.5', html, count=1)
               if changed != 1:
                   raise SystemExit("No se pudo actualizar la versión de caché de styles.css.")
               index.write_text(html, encoding="utf-8")
-          print("Caché de estilos actualizada a 1.05.")
+          print("Caché de estilos actualizada a 1.0.5.")
           PY
 
           # Mostrar una versión visible en la página para confirmar qué publicación está cargada.
@@ -641,7 +641,7 @@ jobs:
           import re
           html_path = Path("public/index.html")
           html = html_path.read_text(encoding="utf-8")
-          version = "1.05"
+          version = "1.0.5"
           badge_id = "dental-jg-build-version"
           badge = f'<div id="{badge_id}" aria-label="Versión del panel DENTAL JG">DENTAL JG · VERSIÓN {version}</div>'
           html = re.sub(r'<div id="dental-jg-build-version"[^>]*>.*?</div>', '', html, flags=re.I|re.S)
@@ -651,7 +651,7 @@ jobs:
           html = re.sub(r'<title>.*?</title>', f'<title>DENTAL JG · Versión {version}</title>', html, count=1, flags=re.I|re.S)
           html = html.replace('</head>', '<meta name="dental-jg-version" content="' + version + '"><style>#' + badge_id + '{position:fixed;right:10px;bottom:10px;z-index:100000;padding:7px 11px;border:1px solid #8bded1;border-radius:999px;background:#e8faf5;color:#087f72;font:600 11px/1.2 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 10px #073b3220;pointer-events:none}</style>\n</head>', 1)
           html_path.write_text(html, encoding="utf-8")
-          print("Indicador visible de versión instalado: DENTAL JG 1.05")
+          print("Indicador visible de versión instalado: DENTAL JG 1.0.5")
           PY
 
           test -s public/index.html
