@@ -98,7 +98,7 @@ jobs:
               end = admin_source.find(end_marker, start)
               if end < 0:
                   raise SystemExit("No se encontró el final del manejador de altas en Administración.")
-              admin_source = admin_source[:start] + "  // Altas bloqueadas aquí: Registro de clientes es el único módulo autorizado.\\n  " + admin_source[end:]
+              admin_source = admin_source[:start] + "  // Altas bloqueadas aquí: Registro de clientes es el único módulo autorizado.\n  " + admin_source[end:]
               admin_js.write_text(admin_source, encoding="utf-8")
           if "from('patients').insert(payload)" in admin_source or 'from("patients").insert(payload)' in admin_source:
               raise SystemExit("La interfaz de Administración contiene un INSERT de pacientes; se cancela el despliegue.")
