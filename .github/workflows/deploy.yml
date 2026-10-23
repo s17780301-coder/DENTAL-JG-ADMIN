@@ -134,17 +134,47 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path("supabase/functions/administrar-usuarios/index.ts")
-          if p.is_file():
-              source = p.read_text()
-              old = '{ error: "No se pudieron verificar los roles de la cuenta." },'
-              new = '{ error: `No se pudieron verificar los roles de la cuenta: ${myRolesError.message}` },'
-              if old in source:
-                  p.write_text(source.replace(old, new, 1))
-                  print("Diagnóstico de my_roles habilitado.")
-              else:
-                  print("El manejador my_roles ya tiene diagnóstico o usa otra versión.")
-          else:
-              print("No se encontró la Edge Function para el diagnóstico my_roles.")
+          if not p.is_file():
+              raise SystemExit("Falta la Edge Function administrar-usuarios/index.ts")
+          source = p.read_text(encoding="utf-8")
+          old = '{ error: "No se pudieron verificar los roles de la cuenta." },'
+          new = '{ error: `No se pudieron verificar los roles de la cuenta: ${myRolesError.message}` },'
+          if old in source:
+              source = source.replace(old, new, 1)
+
+          roles_old = """const allowedRoles = new Set(["admin", "cobranza", "registro", "gestor"]);
+          const roles = [...new Set((roleRows ?? [])
+            .map((row: { role?: string }) => String(row.role ?? "").trim().toLowerCase())
+            .filter((role: string) => allowedRoles.has(role)))];
+          return jsonResponse(req, { roles });"""
+          roles_new = """const roleAliases: Record<string, string> = {
+            admin: "admin",
+            administrator: "admin",
+            administrador: "admin",
+            administracion: "admin",
+            "administración": "admin",
+            owner: "admin",
+            cobranza: "cobranza",
+            collection: "cobranza",
+            collector: "cobranza",
+            registro: "registro",
+            registrador: "registro",
+            registro_clientes: "registro",
+            registro_de_clientes: "registro",
+            "registro de clientes": "registro",
+            registration: "registro",
+            gestor: "gestor",
+          };
+          const roles = [...new Set((roleRows ?? [])
+            .map((row: { role?: string }) => roleAliases[String(row.role ?? "").trim().toLowerCase()] ?? "")
+            .filter((role: string) => Boolean(role)))];
+          return jsonResponse(req, { roles });"""
+          if roles_old in source:
+              source = source.replace(roles_old, roles_new, 1)
+          elif "const roleAliases: Record<string, string>" not in source:
+              raise SystemExit("No se reconoció el bloque my_roles esperado; se cancela para no publicar una función sin validar.")
+          p.write_text(source, encoding="utf-8")
+          print("my_roles corregido: roles múltiples y variantes de nombres normalizados.")
           PY
 
           # Corregir CORS de la Edge Function en cada despliegue. El ZIP puede contener una copia antigua.
@@ -183,10 +213,6 @@ jobs:
           p.write_text(source, encoding="utf-8")
           print("CORS verificado: portal web + Android WebView + encabezados Supabase.")
           PY
-
-          echo "=== DIAGNÓSTICO TEMPORAL my_roles ==="
-          grep -n -B 12 -A 28 -E "my_roles|app_user_roles" supabase/functions/administrar-usuarios/index.ts | head -180 || true
-          echo "=== FIN DIAGNÓSTICO my_roles ==="
 
           # Añadir delete_user porque la interfaz de Usuarios incluye esa acción.
           # Protege la cuenta actual y el último administrador antes de borrar en Auth.
@@ -869,7 +895,7 @@ jobs:
           # Incrementar la versión del CSS para evitar que el móvil reutilice colores antiguos.
           index = Path("public/index.html")
           html = index.read_text(encoding="utf-8")
-          cache_version = "1.0.5-turquesa2"
+          cache_version = "1.0.6-roles-fix"
           html, changed = re.subn(r'styles\.css(?:\?v=[^"\']*)?', 'styles.css?v=' + cache_version, html, count=1)
           if changed != 1:
               raise SystemExit("No se pudo forzar una nueva URL de caché para styles.css.")
