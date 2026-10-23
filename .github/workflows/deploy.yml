@@ -1287,7 +1287,7 @@ jobs:
               if not path.is_file():
                   raise SystemExit(f"Falta el HTML publicado de {module}.")
               html = path.read_text(encoding="utf-8")
-              html, count = re.subn(r"Versión\\s+[0-9]+(?:\\.[0-9]+){1,3}", "Versión 1.0", html, flags=re.I)
+              html, count = re.subn(r"Versión\s+[0-9]+(?:\.[0-9]+){1,3}", "Versión 1.0", html, flags=re.I)
               if count == 0:
                   raise SystemExit(f"No se encontró la etiqueta de versión de {module}; no se publica una versión incoherente.")
               path.write_text(html, encoding="utf-8")
