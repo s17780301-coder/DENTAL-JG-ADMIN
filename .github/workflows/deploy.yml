@@ -37,6 +37,27 @@ jobs:
             echo "Usando archivos del panel ubicados en la raíz del repositorio."
             panel_dir="."
             cp "${required[@]}" public/
+            # Publicar las interfaces web reales incluidas en el paquete de aplicaciones Android.
+            # Cada módulo conserva su HTML, CSS, JS y login originales.
+            app_bundle="DENTAL_JG_1_0_6_APPS_WEB_SQL_ACTUALIZADO.zip"
+            curl -fsSL --retry 3 "https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/${app_bundle}" -o "/tmp/${app_bundle}"
+            mkdir -p /tmp/dental-apps
+            unzip -oq "/tmp/${app_bundle}" -d /tmp/dental-apps
+            copy_module() {
+              local source="$1" target="$2"
+              mkdir -p "$target"
+              find "$source" -maxdepth 1 -type f ! -name "*.sql" -exec cp -f {} "$target/" \;
+            }
+            copy_module "/tmp/dental-apps/djg/registro-app/src/main/assets/registro-web" "public/modules/registro"
+            copy_module "/tmp/dental-apps/djg/cobranza-app/src/main/assets" "public/modules/cobranza"
+            copy_module "/tmp/dental-apps/djg/panel-apk/src/main/assets" "public/modules/administracion"
+            for module in registro cobranza administracion; do
+              test -s "public/modules/$module/index.html"
+              test -s "public/modules/$module/app.js"
+              test -s "public/modules/$module/styles.css"
+              test -s "public/modules/$module/config.js"
+            done
+            echo "Tres interfaces originales preparadas con sus archivos funcionales."
             # Recuperar el PNG original desde el ZIP maestro si está disponible.
             if [[ ! -s public/logo-dental-jg.png ]]; then
               for logo_zip in 00_DENTAL_JG_PANEL_WEB_MAESTRO_1_0_6_ACTUALIZADO.zip *.zip paquetes/*.zip; do
