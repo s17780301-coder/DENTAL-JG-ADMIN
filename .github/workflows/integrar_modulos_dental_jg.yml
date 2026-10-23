@@ -2,6 +2,9 @@ name: Integrar módulos reales DENTAL JG
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/integrar_modulos_dental_jg.yml'
 
 permissions:
   contents: write
