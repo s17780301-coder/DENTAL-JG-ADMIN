@@ -246,6 +246,8 @@ jobs:
               raise SystemExit("Cobranza aún conserva restauración automática de sesión; se cancela la publicación.")
           cobranza_js.write_text(source, encoding="utf-8")
           print("Cobranza: exige correo y contraseña al abrirse.")
+                    PY
+
           # Mantener la Edge Function existente para que el resto del flujo no la sustituya por una copia vacía.
             if [[ ! -s "supabase/functions/administrar-usuarios/index.ts" ]]; then
               shopt -s nullglob
