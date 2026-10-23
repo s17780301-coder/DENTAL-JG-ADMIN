@@ -173,3 +173,17 @@ th{background:#1C2B38;color:#A5B4C4}td{color:#C9D5E0;border-top-color:#2B3948}td
 #ownAccountForm button { max-width:100%; white-space:normal; }
 /* Logotipo y marca sin placa blanca ni fondo añadido. */
 .brand-logo-login,.brand-logo-sidebar,.brand-intro-card img,.app-round-logo { background:transparent !important; border:0 !important; box-shadow:none !important; }
+
+
+/* DENTAL JG · identidad turquesa coherente con el resto del sistema */
+:root{--navy:#087f78;--navy2:#073b3a;--teal:#19b9b0;--blue:#087f78;--ink:#17343a;--muted:#708686;--bg:#f2f9f8;--line:#d7eeeb}
+.sidebar{background:linear-gradient(180deg,#073b3a,#0d7771 72%,#087f78)!important}
+.primary,.welcome,.topbar{background:linear-gradient(115deg,#073b3a,#0d7771 65%,#19b9b0)!important}
+.brand-intro{background:linear-gradient(145deg,#073b3a,#0d7771 58%,#28b7a7)!important}
+.nav.active{background:linear-gradient(120deg,#0d7771,#087f78)!important;box-shadow:inset 3px 0 #72e5dc!important}
+.metric-icon.blue{background:#dff8f4!important;color:#087f78!important}
+.metric-icon.green{background:#dff8f4!important;color:#087f78!important}
+.topbar .eyebrow,.topbar h2{color:#fff!important}
+.primary:hover,.outline:hover,.small-action:hover{border-color:#19b9b0!important;filter:brightness(1.04)}
+.money,.patient-name-link{color:#087f78!important}
+@media(prefers-color-scheme:dark){:root{--ink:#e7f3f1;--muted:#a5c3bf;--bg:#101d20;--line:#294442;--white:#172a2d}.app,.login-shell{background:#101d20;color:#e7f3f1}.metric,.table-card,.clinic-form-card,.patient-dialog-card,.user-chip{background:#172a2d;color:#e7f3f1;border-color:#294442}.topbar .user-chip{background:#172a2d;color:#e7f3f1}.patient-form input,.search,.stack input,.clinic-form-row input,.clinic-form-row select{background:#102124;color:#e7f3f1;border-color:#294442}th{background:#1b3033;color:#b5d4d0}td{color:#d7e9e6;border-color:#294442}}
