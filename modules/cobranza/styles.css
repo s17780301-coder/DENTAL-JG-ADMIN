@@ -399,3 +399,12 @@ h1,.metrics strong{color:#087F78}
 header .brand .app-round-logo{display:block!important;width:clamp(120px,18vw,170px)!important;height:auto!important;max-height:52px!important;object-fit:contain!important;border-radius:0!important;background:transparent!important;padding:0!important;border:0!important;box-shadow:none!important}
 
 .app-version{font:500 10px/1.4 system-ui,sans-serif;letter-spacing:.25px;text-align:center;color:#8ca1b3;opacity:.72;padding:8px 12px 12px;margin-top:8px}
+
+
+/* Identidad visual DENTAL JG: turquesa, sin cabecera azul heredada. */
+:root{--navy:#087f78;--teal:#19b9b0;--blue:#087f78;--bg:#f2f9f8;--text:#17343a;--muted:#617d83;--line:#d7eeeb}
+.login{background:linear-gradient(140deg,#073b3a,#0d7771 58%,#28b7a7)!important}
+header{background:linear-gradient(105deg,#073b3a,#0d7771 65%,#19b9b0)!important}
+h1,.metrics strong,.toast{color:#087f78}
+.primary,.ghost:hover{background:linear-gradient(120deg,#19b9b0,#087f78)!important;color:#fff!important}
+@media(prefers-color-scheme:dark){:root{--bg:#101d20;--text:#e4f4f2;--muted:#a1c0bd;--line:#294442}body{background:var(--bg);color:var(--text)}.metrics article,.panel,.login-card,nav{background:#172a2d;color:var(--text);border-color:var(--line)}input,select,textarea{background:#102124;color:var(--text);border-color:var(--line)}th{background:#1b3033;color:#b5d4d0}td{border-color:#294442}nav{border-color:var(--line)}nav button{color:#b5d4d0}}
