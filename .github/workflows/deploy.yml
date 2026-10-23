@@ -1314,7 +1314,7 @@ jobs:
           done
           grep -Fq "register_dental_jg_patient" public/modules/registro/app.js
           grep -Fq "delete_archived_patient" public/modules/cobranza/app.js
-          grep -Fq "archive_patient_account" public/modules/administracion/app.js
+          grep -Fq "delete_patient_permanently" public/modules/administracion/app.js
           if grep -Eq "from\\(['\"]patients['\"]\\)[[:space:]]*\\.(insert|upsert)" public/modules/administracion/app.js; then
             echo "::error::Administración contiene una ruta de alta de pacientes; el único módulo autorizado es Registro."
             exit 1
