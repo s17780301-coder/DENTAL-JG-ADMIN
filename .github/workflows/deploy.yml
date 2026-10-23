@@ -35,7 +35,6 @@ jobs:
           done
 
           if [[ "$root_ready" == true ]]; then
-            # Evitar que un index de ADMON APP se publique como si fuera el portal integral.
             if ! grep -q 'data-view="patients"' index.html || ! grep -q 'data-view="collection"' index.html || ! grep -q 'data-view="admin"' index.html; then
               echo "::error::El index.html de la raíz no contiene los tres módulos del panel integral."
               exit 1
@@ -43,15 +42,7 @@ jobs:
             echo "Usando archivos del PANEL INTEGRAL ubicados en la raíz del repositorio."
             panel_dir="."
             cp "${required[@]}" public/
-            # Recuperar el logotipo del ZIP maestro si no está todavía en la raíz.
-            if [[ -s "logo-dental-jg.png" ]]; then
-              cp "logo-dental-jg.png" public/
-            else
-              logo_copied=false
-              shopt -s nullglob
-              for logo_zip in *.zip paquetes/*.zip; do
-                [[ -f "$logo_zip" ]] || continue
-                logo_entry="$(unzip -Z1 "$logo_zip" | grep -E '(^|/)logo-dental-jg\.png
+          else
             # No depender de un nombre fijo de ZIP: detectar cualquier ZIP del repositorio
             # que contenga la estructura completa del panel.
             shopt -s nullglob
