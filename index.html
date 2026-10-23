@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#073b3a"><meta name="description" content="Panel central DENTAL JG">
+<title>DENTAL JG | Panel central</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="login" class="login-wrap"><form id="loginForm" class="login-card">
+<div class="logo">DJG</div><p class="eyebrow">SISTEMA INTEGRAL</p><h1>DENTAL <span>JG</span></h1>
+<p class="muted">Acceso exclusivo para Registro, Cobranza y Administración.</p>
+<label>Correo de usuario<input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com"></label>
+<label>Contraseña personal<input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
+<button class="primary" type="submit">Entrar de forma segura</button><p id="loginMsg" role="status" aria-live="polite"></p>
+<small>Las cuentas deben estar activas y tener un rol autorizado en Supabase.</small>
+</form></div>
+<div id="app" class="shell hidden">
+<aside class="sidebar"><div class="brand"><div class="logo small">DJG</div><div><b>DENTAL JG</b><small>Panel central</small></div></div>
+<div class="profile"><b id="userEmail">Usuario</b><small id="userRole">Validando permisos…</small></div>
+<nav id="nav" aria-label="Módulos">
+<button data-view="patients" class="nav"><span class="nav-icon">♙</span><span>Registro de clientes</span></button>
+<button data-view="collection" class="nav"><span class="nav-icon">＄</span><span>Cobranza</span></button>
+<button data-view="admin" class="nav"><span class="nav-icon">⚙</span><span>Administración</span></button>
+</nav><div class="side-bottom"><div id="connection">● Conectando…</div><button id="logout" class="logout" type="button">Cerrar sesión ↗</button></div></aside>
+<main class="main"><header class="topbar"><div><p class="eyebrow">DENTAL JG · CONTROL CENTRAL</p><h2 id="viewTitle">Registro de clientes</h2><p class="muted">Módulos autorizados conectados a la misma base de datos.</p></div><div class="top-actions"><span id="today"></span><button id="refresh" class="secondary" type="button">Actualizar ↻</button></div></header>
+<div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
+<section id="patients" class="view hidden">
+<div class="panel"><div class="section-head"><div><h3>Registrar cliente</h3><p>Registro de clientes es la fuente oficial del nombre y número de póliza.</p></div></div>
+<form id="patientForm" class="form-grid">
+<label>Nombre completo *<input id="pName" required maxlength="160"></label>
+<label>Teléfono principal *<input id="pPhone" required maxlength="40" inputmode="tel"></label>
+<label>Teléfono secundario<input id="pPhone2" maxlength="40" inputmode="tel"></label>
+<label>Tratamiento *<select id="pTreatment" required><option value="">Selecciona tratamiento</option><option>Básico</option><option>Orto</option><option>VIP</option><option>Damon</option></select></label>
+<label>Clínica *<select id="pClinic" required><option value="">Selecciona clínica</option></select></label>
+<label>Número de póliza *<input id="pPolicy" required maxlength="100"></label>
+<label>Importe total (MXN) *<input id="pTotal" type="number" min="0" step=".01" required></label>
+<label>Número de pagos *<input id="pInstallments" type="number" min="1" step="1" required></label>
+<label>Importe por pago (MXN) *<input id="pInstallmentAmount" type="number" min="0" step=".01" required></label>
+<label>Dirección<input id="pAddress" maxlength="240"></label>
+<label class="full">Observaciones<textarea id="pObservations" rows="2" maxlength="500"></textarea></label>
+<div class="form-actions"><button class="primary" type="submit">Guardar cliente</button><span id="patientMsg" class="muted"></span></div>
+</form></div>
+<div class="panel"><div class="section-head"><div><h3>Directorio de clientes</h3><p>Los datos se consultan desde Supabase.</p></div><input id="patientSearch" placeholder="Buscar nombre o póliza…" aria-label="Buscar clientes"></div>
+<div class="table-scroll"><table><thead><tr><th>Cliente</th><th>Clínica</th><th>Póliza</th><th>Tratamiento</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody id="patientRows"><tr><td colspan="7">Inicia sesión para consultar.</td></tr></tbody></table></div></div>
+</section>
+<section id="collection" class="view hidden">
+<div class="subnav" role="tablist" aria-label="Secciones de Cobranza"><button type="button" class="subtab active" data-panel="paymentsPanel">Pagos</button><button type="button" class="subtab" data-panel="portfoliosPanel">Carteras</button><button type="button" class="subtab" data-panel="receiptsPanel">Recibos</button></div>
+<div id="paymentsPanel" class="collection-panel">
+<div class="panel"><div class="section-head"><div><h3>Registrar cobranza</h3><p>El pago se registra mediante una función transaccional segura de Supabase.</p></div></div>
+<form id="paymentForm" class="form-grid"><label>Cliente *<select id="payPatient" required><option value="">Selecciona cliente</option></select></label>
+<label>Importe recibido (MXN) *<input id="payAmount" type="number" min=".01" step=".01" required></label>
+<label>Concepto<input id="payConcept" maxlength="120" value="Abono"></label><label>Referencia / nota<input id="payReference" maxlength="160"></label>
+<div class="form-actions"><button class="primary" type="submit">Registrar pago</button><span id="paymentMsg" class="muted"></span></div></form></div>
+<div class="panel"><div class="section-head"><div><h3>Historial de pagos</h3></div><input id="paymentSearch" placeholder="Buscar movimiento…" aria-label="Buscar pagos"></div><div class="table-scroll"><table><thead><tr><th>Cliente</th><th>Fecha</th><th>Concepto</th><th>Importe</th><th>Referencia</th></tr></thead><tbody id="paymentRows"></tbody></table></div></div></div>
+<div id="portfoliosPanel" class="collection-panel hidden"><div class="panel"><div class="section-head"><div><h3>Carteras quincenales</h3><p>Consulta carteras existentes, pólizas y gestor asignado.</p></div><button id="loadPortfolios" class="secondary" type="button">Cargar carteras</button></div><div class="table-scroll"><table><thead><tr><th>Quincena</th><th>Cliente</th><th>Clínica</th><th>Póliza</th><th>Saldo</th><th>Gestor asignado</th></tr></thead><tbody id="portfolioRows"><tr><td colspan="6">Pulsa “Cargar carteras”.</td></tr></tbody></table></div></div></div>
+<div id="receiptsPanel" class="collection-panel hidden"><div class="panel"><div class="section-head"><div><h3>Recibos emitidos</h3><p>Consulta recibos existentes sin generar folios duplicados.</p></div><button id="loadReceipts" class="secondary" type="button">Cargar recibos</button></div><div class="table-scroll"><table><thead><tr><th>Folio</th><th>Cliente</th><th>Fecha</th><th>Importe</th><th>Concepto</th></tr></thead><tbody id="receiptRows"><tr><td colspan="5">Pulsa “Cargar recibos”.</td></tr></tbody></table></div></div></div>
+</section>
+<section id="admin" class="view hidden"><div class="panel"><div class="section-head"><div><h3>Administración</h3><p>Configuración de clínicas y revisión de roles autorizados.</p></div></div>
+<div class="admin-grid"><div><h4>Clínicas</h4><form id="clinicForm" class="inline-form"><label>Nombre de clínica *<input id="clinicName" required maxlength="100"></label><button class="primary" type="submit">Agregar clínica</button></form><div class="table-scroll"><table><thead><tr><th>Clínica</th><th>Clientes</th></tr></thead><tbody id="clinicRows"></tbody></table></div></div>
+<div><h4>Accesos</h4><p class="muted">Solo se permite entrar al panel con los roles Administración, Cobranza o Registro. Los gestores utilizan su aplicación y no pueden entrar aquí.</p><div id="roleInfo" class="notice">Los permisos se verifican al iniciar sesión.</div><p class="warning">La seguridad definitiva depende de las políticas RLS y permisos de Supabase; ocultar módulos en pantalla no sustituye esas políticas.</p></div></div></div></section>
+<footer>DENTAL JG · Panel central <span>Registro · Cobranza · Administración</span></footer>
+</main></div>
+<script src="config.js"></script><script src="app.js"></script>
+</body></html>
