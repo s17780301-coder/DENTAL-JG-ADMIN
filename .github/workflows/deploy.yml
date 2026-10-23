@@ -185,6 +185,56 @@ jobs:
           print("Tres módulos originales preparados; permisos, caché y logo oficial verificados.")
           PY
 
+                    # Forzar login explícito en Administración: no restaurar sesiones persistidas entre aperturas.
+          # Esto no cambia el login ni la validación del rol que ocurren después de enviar el formulario.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          admin_js = Path("public/modules/administracion/app.js")
+          source = admin_js.read_text(encoding="utf-8")
+
+          # Eliminar la rutina que abría Administración automáticamente al encontrar una sesión guardada.
+          source, removed = re.subn(
+              r"\\s*async function restoreAdminSession\\(session\\)\\s*\\{.*?\\}\\s*(?=if\\(configured\\)\\{try\\{client=window\\.supabase\\.createClient)",
+              "",
+              source,
+              count=1,
+              flags=re.S,
+          )
+
+          # Inicializar el cliente sin leer ni persistir una sesión de aperturas anteriores.
+          source, init_count = re.subn(
+              r"if\\(configured\\)\\{try\\{client=window\\.supabase\\.createClient[\\s\\S]*?catch\\(err\\)\\{console\\.error\\('No se pudo inicializar la sesión',err\\);\\}\\}",
+              "if(configured){try{client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}});}catch(err){console.error('No se pudo inicializar la sesión',err);}}",
+              source,
+              count=1,
+          )
+          if init_count != 1:
+              raise SystemExit("No se pudo desactivar la restauración automática de sesión de Administración.")
+
+          # Asegurar que el cliente de respaldo del formulario use la misma política.
+          source = source.replace("persistSession:true", "persistSession:false")
+          source = source.replace(",storage:window.localStorage", "")
+          if "restoreAdminSession" in source or "client.auth.getSession()" in source:
+              raise SystemExit("Administración aún contiene una ruta de inicio automático; se cancela la publicación.")
+
+          admin_js.write_text(source, encoding="utf-8")
+
+          # En Cobranza, el nombre que acompaña al logo debe ser únicamente “Cobranza”.
+          cobranza_index = Path("public/modules/cobranza/index.html")
+          html = cobranza_index.read_text(encoding="utf-8")
+          html = html.replace("Cobranza DENTAL JG", "Cobranza")
+          if "Cobranza DENTAL JG" in html:
+              raise SystemExit("Quedó texto redundante junto al logo de Cobranza.")
+          if '<b>Cobranza</b>' not in html:
+              raise SystemExit("No se encontró el encabezado Cobranza esperado tras corregirlo.")
+          cobranza_index.write_text(html, encoding="utf-8")
+
+          print("Administración: exige correo y contraseña en cada apertura.")
+          print("Cobranza: texto junto al logo corregido a “Cobranza”.")
+          PY
+
           # Mantener la Edge Function existente para que el resto del flujo no la sustituya por una copia vacía.
             if [[ ! -s "supabase/functions/administrar-usuarios/index.ts" ]]; then
               shopt -s nullglob
