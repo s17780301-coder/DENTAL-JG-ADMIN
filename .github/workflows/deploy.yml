@@ -33,7 +33,7 @@ jobs:
             [[ -s "$file" ]] || root_ready=false
           done
 
-          if [[ "$root_ready" == true && ! -s "00_DENTAL_JG_PANEL_WEB_MAESTRO_1_0_6_ACTUALIZADO.zip" ]]; then
+          if [[ "$root_ready" == true ]]; then
             echo "Usando archivos del panel ubicados en la raíz del repositorio."
             panel_dir="."
             cp "${required[@]}" public/
