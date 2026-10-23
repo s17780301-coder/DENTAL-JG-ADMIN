@@ -48,7 +48,6 @@
   const labels = {registro:'Registro de clientes',cobranza:'Cobranza',administracion:'Administración'};
   window.openDentalModule = function (name) {
     if (!labels[name]) return;
-    heading.textContent = labels[name];
     frame.src = './modules/' + name + '/index.html?build=20261023';
     portal.style.display = 'none';
     stage.classList.remove('hidden');
@@ -349,46 +348,6 @@
   </main>
 </div>
 
-
-<script>
-/* Abre la aplicación web original seleccionada; no sustituye su interfaz por pantallas duplicadas del panel. */
-document.addEventListener('DOMContentLoaded', function () {
-  const stage = document.getElementById('moduleStage');
-  const frame = document.getElementById('moduleFrame');
-  const heading = document.getElementById('moduleHeading');
-  const picker = document.getElementById('appPicker');
-  const login = document.getElementById('login');
-  const labels = {patients:'Registro de clientes',collection:'Cobranza',admin:'Administración'};
-  const paths = {patients:'registro',collection:'cobranza',admin:'administracion'};
-  window.openDentalModule = function (key) {
-    const path = paths[key] || key;
-    const label = labels[key] || ({registro:'Registro de clientes',cobranza:'Cobranza',administracion:'Administración'})[path];
-    if (!label || !['registro','cobranza','administracion'].includes(path)) return;
-    heading.textContent = label;
-    frame.src = './modules/' + path + '/index.html?build=20261023';
-    if (picker) picker.classList.add('hidden');
-    if (login) login.classList.add('hidden');
-    document.getElementById('app')?.classList.add('hidden');
-    stage.classList.remove('hidden');
-    stage.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  };
-  document.querySelectorAll('[data-select-app]').forEach(function (button) {
-    button.addEventListener('click', function (event) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      window.openDentalModule(button.dataset.selectApp);
-    }, true);
-  });
-  document.getElementById('moduleBack')?.addEventListener('click', function () {
-    frame.src = 'about:blank';
-    stage.style.display = 'none';
-    stage.classList.add('hidden');
-    if (picker) picker.classList.remove('hidden');
-    document.body.style.overflow = '';
-  });
-});
-</script>
 
 <script src="./config.js?v=10.8.71"></script>
 <script src="./app.js?v=10.8.71"></script>
