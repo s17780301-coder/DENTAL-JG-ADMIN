@@ -1284,8 +1284,8 @@ jobs:
           js = root / "app.js"
           html = root / "index.html"
           source = js.read_text(encoding="utf-8")
-          old = '<button class="rowbtn ghost" data-view-archive="\${a.id}">Ver expediente</button></td></tr>'
-          new = """<button class="rowbtn ghost" data-view-archive="\${a.id}">Ver expediente</button> \${isAdmin ? '<button class="danger-btn" data-delete-archive="' + a.id + '">Eliminar archivo</button>' : ''}</td></tr>"""
+          old = '<button class="rowbtn ghost" data-view-archive="' + chr(36) + '{a.id}">Ver expediente</button></td></tr>'
+          new = '<button class="rowbtn ghost" data-view-archive="' + chr(36) + '{a.id}">Ver expediente</button> ' + chr(36) + """{isAdmin ? '<button class="danger-btn" data-delete-archive="' + a.id + '">Eliminar archivo</button>' : ''}</td></tr>"""
           if "data-delete-archive" not in source:
               if old not in source:
                   raise SystemExit("No se encontró la fila de expedientes archivados de Cobranza.")
