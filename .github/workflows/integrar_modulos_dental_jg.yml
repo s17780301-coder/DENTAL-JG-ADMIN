@@ -106,6 +106,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          find modules -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" -o -name "*.webmanifest" \) -print0 | xargs -0 sed -i "s/[[:space:]]*$//"
           git add index.html modules/
           git diff --cached --check
           if git diff --cached --quiet; then
