@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#073b3a">
 <meta name="description" content="Panel central DENTAL JG">
 <title>DENTAL JG | Panel central</title>
-<link rel="stylesheet" href="./styles.css?v=1.0.7">
+<link rel="stylesheet" href="./styles.css?v=1.0.8">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <section id="appPicker" class="portal-wrap" aria-labelledby="portalTitle">
   <header class="portal-header">
-    <img class="portal-logo" src="./logo-dental-jg.png?v=1.0.7" alt="Logotipo DENTAL JG">
+    <div class="portal-logo-frame"><img class="portal-logo" src="./logo-dental-jg.svg?v=1.0.8" alt="Logotipo DENTAL JG"></div>
     <div class="portal-brand"><p class="eyebrow" id="portalTitle">PLATAFORMA INTEGRAL</p><p class="portal-subtitle">Selecciona el área a la que deseas ingresar</p></div>
   </header>
   <div class="portal-rule"><span></span><p>ACCESO APLICACIONES</p><span></span></div>
@@ -32,29 +32,46 @@
     </button>
   </div>
   <p class="portal-footer"><span class="status-dot"></span> Plataforma segura · Acceso según permisos asignados</p>
+  <div id="portalNotice" class="portal-notice hidden" role="status" aria-live="polite"></div>
 </section>
 
 <section id="login" class="login-wrap hidden" aria-labelledby="loginTitle">
   <button id="backToApps" class="back-to-apps" type="button"><span aria-hidden="true">←</span> Volver a aplicaciones</button>
-  <form id="loginForm" class="login-card">
-    <div class="login-logo"><img src="./logo-dental-jg.png?v=1.0.7" alt="Logotipo oficial DENTAL JG"></div>
+  <div class="login-card">
+    <div class="login-logo"><img src="./logo-dental-jg.svg?v=1.0.8" alt="Logotipo oficial DENTAL JG"></div>
     <p class="eyebrow">ACCESO SEGURO</p>
     <h1 id="loginTitle">Iniciar sesión</h1>
     <div id="selectedAppBadge" class="selected-app-badge"><span class="selected-app-dot"></span><span id="selectedAppLabel">Aplicación seleccionada</span></div>
-    <p class="muted">Utiliza tu cuenta autorizada de DENTAL JG.</p>
-    <label>Correo de usuario<input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com"></label>
-    <label>Contraseña personal<input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
-    <button class="primary login-submit" type="submit"><span>Entrar de forma segura</span><span aria-hidden="true">↗</span></button>
-    <p id="loginMsg" role="status" aria-live="polite"></p>
-    <small>El acceso depende del rol y de los permisos configurados en Supabase.</small>
-  </form>
+    <p class="muted">Utiliza tu correo y contraseña personal para entrar.</p>
+    <form id="loginForm" class="auth-form">
+      <label>Correo de usuario<input id="email" type="email" autocomplete="username" required placeholder="usuario@dentaljg.com"></label>
+      <label>Contraseña personal<input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
+      <button id="loginSubmit" class="primary login-submit" type="submit"><span>Entrar de forma segura</span><span aria-hidden="true">↗</span></button>
+      <p id="loginMsg" class="auth-message" role="status" aria-live="polite"></p>
+      <button id="forgotPassword" class="auth-link" type="button">¿Olvidaste tu contraseña?</button>
+    </form>
+    <form id="recoveryForm" class="auth-form hidden">
+      <p class="muted">Escribe tu correo. Te enviaremos un enlace para restablecer la contraseña; no iniciaremos sesión con solo el correo.</p>
+      <label>Correo de la cuenta<input id="recoveryEmail" type="email" autocomplete="email" required placeholder="usuario@dentaljg.com"></label>
+      <button id="sendRecovery" class="primary login-submit" type="submit"><span>Enviar enlace de recuperación</span><span aria-hidden="true">↗</span></button>
+      <p id="recoveryMsg" class="auth-message" role="status" aria-live="polite"></p>
+      <button id="cancelRecovery" class="auth-link" type="button">Volver a iniciar sesión</button>
+    </form>
+    <form id="resetPasswordForm" class="auth-form hidden">
+      <p class="muted">Define una contraseña nueva para tu cuenta.</p>
+      <label>Nueva contraseña<input id="newPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="Mínimo 8 caracteres"></label>
+      <label>Confirmar contraseña<input id="confirmNewPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="Repite la nueva contraseña"></label>
+      <button id="saveNewPassword" class="primary login-submit" type="submit"><span>Guardar nueva contraseña</span><span aria-hidden="true">↗</span></button>
+      <p id="resetPasswordMsg" class="auth-message" role="status" aria-live="polite"></p>
+    </form>
+    <small>El acceso depende de que la cuenta esté activa y tenga un rol autorizado en Supabase.</small>
+  </div>
 </section>
-
 <div id="app" class="shell hidden">
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">
-        <img src="./logo-dental-jg.png?v=1.0.7" alt="Logotipo oficial DENTAL JG">
+        <img src="./logo-dental-jg.svg?v=1.0.8" alt="Logotipo oficial DENTAL JG">
       </div>
       <div><b>DENTAL JG</b><small>Panel central</small></div>
     </div>
@@ -297,8 +314,8 @@
   </main>
 </div>
 
-<script src="./config.js?v=1.0.7"></script>
-<script src="./app.js?v=1.0.7"></script>
+<script src="./config.js?v=1.0.8"></script>
+<script src="./app.js?v=1.0.8"></script>
 
 </body>
 </html>
