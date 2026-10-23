@@ -233,6 +233,24 @@ jobs:
 
           print("Administración: exige correo y contraseña en cada apertura.")
           print("Cobranza: texto junto al logo corregido a “Cobranza”.")
+          
+          # Cobranza también debe mostrar el formulario al abrirse; no entrar con sesión local anterior.
+          cobranza_js = Path("public/modules/cobranza/app.js")
+          source = cobranza_js.read_text(encoding="utf-8")
+          source, auth_count = re.subn(
+              r"if\\(cfg\\.supabaseUrl&&cfg\\.supabaseAnonKey\\)\\{db=window\\.supabase\\.createClient\\(cfg\\.supabaseUrl,cfg\\.supabaseAnonKey,\\{auth:\\{persistSession:true,autoRefreshToken:true,storage:window\\.localStorage\\}\\}\\);db\\.auth\\.getSession\\(\\)\\.then\\(async\\(\\{data\\}\\)=>\\{if\\(data\\.session\\)\\{user=data\\.session\\.user;await start\\(\\)\\}\\}\\);db\\.auth\\.onAuthStateChange\\(\\(event,session\\)=>\\{if\\(event==='SIGNED_IN'&&session&&!user\\)\\{user=session\\.user;start\\(\\)\\}\\}\\)\\}\\)\\;?",
+              "if(cfg.supabaseUrl&&cfg.supabaseAnonKey){db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}})}",
+              source,
+              count=1,
+          )
+          if auth_count != 1:
+              raise SystemExit("No se pudo quitar la entrada automática de Cobranza; se cancela la publicación.")
+          source = source.replace("auth:{persistSession:true,autoRefreshToken:true,storage:window.localStorage}", "auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}")
+          if "db.auth.getSession()" in source or "persistSession:true" in source:
+              raise SystemExit("Cobranza todavía conserva restauración automática de sesión; se cancela la publicación.")
+          cobranza_js.write_text(source, encoding="utf-8")
+          print("Cobranza: exige correo y contraseña al abrirse.")
+
           PY
 
           # Mantener la Edge Function existente para que el resto del flujo no la sustituya por una copia vacía.
