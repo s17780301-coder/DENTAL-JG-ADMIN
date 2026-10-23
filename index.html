@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#073b3a">
 <meta name="description" content="Panel central DENTAL JG">
 <title>DENTAL JG | Panel central</title>
-<link rel="stylesheet" href="./styles.css?v=10.8.72">
+<link rel="stylesheet" href="./styles.css?v=10.8.73">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -48,7 +48,7 @@
   const labels = {registro:'Registro de clientes',cobranza:'Cobranza',administracion:'Administración'};
   window.openDentalModule = function (name) {
     if (!labels[name]) return;
-    frame.src = './modules/' + name + '/index.html?build=20261023';
+    frame.src = './modules/' + name + '/index.html?build=20261024';
     portal.style.display = 'none';
     stage.classList.remove('hidden');
     stage.style.display = 'flex';
@@ -350,7 +350,7 @@
 
 
 <script src="./config.js?v=10.8.71"></script>
-<script src="./app.js?v=10.8.71"></script>
+<script src="./app.js?v=10.8.73"></script>
 
 </body>
 </html>
