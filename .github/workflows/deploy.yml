@@ -1274,6 +1274,47 @@ jobs:
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
 
+      - name: Reparar eliminación de expedientes archivados en Cobranza web
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("public/modules/cobranza")
+          js = root / "app.js"
+          html = root / "index.html"
+          source = js.read_text(encoding="utf-8")
+          old = '<button class="rowbtn ghost" data-view-archive="\${a.id}">Ver expediente</button></td></tr>'
+          new = """<button class="rowbtn ghost" data-view-archive="\${a.id}">Ver expediente</button> \${isAdmin ? '<button class="danger-btn" data-delete-archive="' + a.id + '">Eliminar archivo</button>' : ''}</td></tr>"""
+          if "data-delete-archive" not in source:
+              if old not in source:
+                  raise SystemExit("No se encontró la fila de expedientes archivados de Cobranza.")
+              source = source.replace(old, new, 1)
+          handler = """async function deleteArchivedPatient(id){if(!isAdmin){toast('Solo Administración puede eliminar expedientes archivados.');return}const a=archivedPatients.find(x=>String(x.id)===String(id));if(!a)return;const name=a.patient_name||'este expediente';if(!confirm('¿Eliminar definitivamente el expediente archivado de '+name+'?\\\\n\\\\nSe eliminará únicamente este registro histórico. No se borrarán pagos de otros clientes ni se tocará el registro activo. Esta acción no se puede deshacer.'))return;try{const {error}=await db.rpc('delete_archived_patient',{p_archive_id:id});if(error)throw error;archivedPatients=archivedPatients.filter(x=>String(x.id)!==String(id));renderArchive();$('archiveAccessMsg').textContent='Archivo actualizado: '+archivedPatients.length+' expediente(s) histórico(s).';toast('Expediente archivado eliminado.')}catch(e){console.error(e);alert('No se pudo eliminar el expediente archivado. Detalle: '+(e.message||'revisa la función delete_archived_patient en Supabase.'))}}"""
+          if "async function deleteArchivedPatient(id)" not in source:
+              marker = "function renderActivePatients(){"
+              pos = source.find(marker)
+              if pos < 0:
+                  raise SystemExit("No se encontró un punto seguro para la función de eliminación histórica.")
+              source = source[:pos] + handler + source[pos:]
+          view_hook = "document.querySelectorAll('[data-view-archive]').forEach(b=>b.onclick=()=>viewArchivedPatient(b.dataset.viewArchive));"
+          delete_hook = "document.querySelectorAll('[data-delete-archive]').forEach(b=>b.onclick=()=>deleteArchivedPatient(b.dataset.deleteArchive));"
+          if delete_hook not in source:
+              if view_hook not in source:
+                  raise SystemExit("No se encontró el manejador Ver expediente para enlazar Eliminar archivo.")
+              source = source.replace(view_hook, view_hook + delete_hook, 1)
+          if "data-delete-archive" not in source or "async function deleteArchivedPatient(id)" not in source or delete_hook not in source:
+              raise SystemExit("No se pudo verificar el botón y manejador de eliminación histórica.")
+          js.write_text(source, encoding="utf-8")
+          page = html.read_text(encoding="utf-8")
+          for oldv in ("1.0.6", "1.0.7", "1.0.8", "1.0.9"):
+              page = page.replace("app.js?v=" + oldv, "app.js?v=1.1.2")
+              page = page.replace("styles.css?v=" + oldv, "styles.css?v=1.1.2")
+          html.write_text(page, encoding="utf-8")
+          print("Cobranza web: botón de eliminación histórica y manejador enlazado dentro de renderArchive().")
+          PY
+          node --check public/modules/cobranza/app.js
+
       - name: Unificar versión visible del portal y los tres módulos en 1.0
         shell: bash
         run: |
