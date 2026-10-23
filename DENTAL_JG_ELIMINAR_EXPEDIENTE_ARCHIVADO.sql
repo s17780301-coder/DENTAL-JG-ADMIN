@@ -55,7 +55,4 @@ REVOKE ALL ON FUNCTION public.delete_archived_patient(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.delete_archived_patient(uuid) FROM anon;
 GRANT EXECUTE ON FUNCTION public.delete_archived_patient(uuid) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.delete_archived_patient(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.delete_archived_patient(uuid) TO authenticated;
-
 COMMIT;
