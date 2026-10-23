@@ -27,7 +27,7 @@ jobs:
           mkdir -p public extracted
 
           # Preferir los archivos ya desplegables en la raíz del repositorio.
-          required=(index.html styles.css app.js config.js)
+          required=(index.html styles.css app.js config.js logo-dental-jg.svg)
           root_ready=true
           for file in "${required[@]}"; do
             [[ -s "$file" ]] || root_ready=false
