@@ -37,6 +37,20 @@ jobs:
             echo "Usando archivos del panel ubicados en la raíz del repositorio."
             panel_dir="."
             cp "${required[@]}" public/
+            # Mantener la Edge Function existente para que el resto del flujo no la sustituya por una copia vacía.
+            if [[ ! -s "supabase/functions/administrar-usuarios/index.ts" ]]; then
+              shopt -s nullglob
+              for function_zip in *.zip paquetes/*.zip; do
+                [[ -f "$function_zip" ]] || continue
+                function_entry="$(unzip -Z1 "$function_zip" | grep 'supabase/functions/administrar-usuarios/index.ts' | head -1 || true)"
+                if [[ -n "$function_entry" ]]; then
+                  mkdir -p supabase/functions/administrar-usuarios
+                  unzip -p "$function_zip" "$function_entry" > supabase/functions/administrar-usuarios/index.ts
+                  echo "Función Edge recuperada del paquete maestro."
+                  break
+                fi
+              done
+            fi
           else
             # No depender de un nombre fijo de ZIP: detectar cualquier ZIP del repositorio
             # que contenga la estructura completa del panel.
