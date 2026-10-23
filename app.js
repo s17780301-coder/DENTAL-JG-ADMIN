@@ -204,7 +204,7 @@ document.querySelectorAll(".subtab").forEach(b=>b.addEventListener("click",()=>s
 $("refresh").addEventListener("click",loadData);$("patientSearch").addEventListener("input",render);$("paymentSearch").addEventListener("input",render);
 $("loadReceipts").addEventListener("click",loadReceipts);$("loadPortfolios").addEventListener("click",loadPortfolios);
 $("patientForm").addEventListener("submit",async e=>{
- e.preventDefault();if(role!=="admin"&&role!=="registro"){note("Solo Registro de clientes o Administración puede dar de alta clientes.");return}
+ e.preventDefault();if(role!=="registro"){note("Alta bloqueada: únicamente el módulo Registro de clientes puede crear expedientes. Administración y Cobranza son de consulta en esta sección.");return}
  const name=$("pName").value.trim(),clinic=$("pClinic").value.trim(),policy=$("pPolicy").value.trim();
  const total=Number($("pTotal").value),inst=Math.trunc(Number($("pInstallments").value)),ia=Number($("pInstallmentAmount").value);
  if(!name||!clinic||!policy||!Number.isFinite(total)||total<0||!Number.isInteger(inst)||inst<1||!Number.isFinite(ia)||ia<0){$("patientMsg").textContent="Verifica los campos obligatorios.";return}
