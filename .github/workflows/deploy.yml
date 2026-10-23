@@ -196,7 +196,7 @@ jobs:
 
           # Eliminar la rutina que abría Administración automáticamente al encontrar una sesión guardada.
           source, removed = re.subn(
-              r"\\s*async function restoreAdminSession\\(session\\)\\s*\\{.*?\\}\\s*(?=if\\(configured\\)\\{try\\{client=window\\.supabase\\.createClient)",
+              r"\s*async function restoreAdminSession\(session\)\s*\{.*?\}\s*(?=if\(configured\)\{try\{client=window\.supabase\.createClient)",
               "",
               source,
               count=1,
@@ -205,7 +205,7 @@ jobs:
 
           # Inicializar el cliente sin leer ni persistir una sesión de aperturas anteriores.
           source, init_count = re.subn(
-              r"if\\(configured\\)\\{try\\{client=window\\.supabase\\.createClient[\\s\\S]*?catch\\(err\\)\\{console\\.error\\('No se pudo inicializar la sesión',err\\);\\}\\}",
+              r"if\(configured\)\{try\{client=window\.supabase\.createClient[\s\S]*?catch\(err\)\{console\.error\('No se pudo inicializar la sesión',err\);\}\}",
               "if(configured){try{client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}});}catch(err){console.error('No se pudo inicializar la sesión',err);}}",
               source,
               count=1,
