@@ -33,7 +33,7 @@ jobs:
             [[ -s "$file" ]] || root_ready=false
           done
 
-          if [[ "$root_ready" == true ]]; then
+          if [[ "$root_ready" == true && ! -s "00_DENTAL_JG_PANEL_WEB_MAESTRO_1_0_6_ACTUALIZADO.zip" ]]; then
             echo "Usando archivos del panel ubicados en la raíz del repositorio."
             panel_dir="."
             cp "${required[@]}" public/
@@ -114,6 +114,64 @@ jobs:
             fi
             cp "$panel_dir"/{index.html,styles.css,app.js,config.js,users.js,logo-dental-jg.png} public/
           fi
+
+          # Corregir la restauración de sesión: nunca mostrar el panel antes de validar el rol.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("public/app.js")
+          s = p.read_text(encoding="utf-8")
+          if "function activateAdminSession" not in s:
+              # Versión del paquete maestro que restauraba sesión directamente sin verificar permisos.
+              pattern = re.compile(
+                  r'client\.auth\.getSession\(\)\.then\(\(\{data,error\}\)\s*=>\s*\{\s*if\(!error&&data&&data\.session\)\{showApp\(\);load\(true\);realtime\(\);\}\s*\}\);\s*'
+                  r'client\.auth\.onAuthStateChange\(\(event,session\)\s*=>\s*\{\s*if\(event===\x27SIGNED_IN\x27&&session&&\$\(\x27appView\x27\)\.classList\.contains\(\x27hidden\x27\)\)\{showApp\(\);load\(true\);realtime\(\);\}\s*\}\);'
+              )
+              if pattern.search(s):
+                  replacement = r'''
+          async function activateAdminSession() {
+            try {
+              const { data, error } = await client.functions.invoke("administrar-usuarios", { body: { action: "my_roles" } });
+              if (error || data?.error) throw new Error(data?.error || error?.message || "No se pudieron verificar los permisos.");
+              const rows = Array.isArray(data?.roles) ? data.roles : [];
+              const roles = rows.map(v => String(typeof v === "string" ? v : (v?.role || "")).trim().toLowerCase());
+              if (!roles.some(v => ["admin", "administrator", "administrador", "owner"].includes(v))) {
+                await client.auth.signOut();
+                $("appView").classList.add("hidden");
+                $("loginView").classList.remove("hidden");
+                const msg = $("loginMessage") || $("loginMsg");
+                if (msg) msg.textContent = "Acceso denegado: esta cuenta no tiene el rol de Administración.";
+                return;
+              }
+              showApp(); load(true); realtime();
+            } catch (e) {
+              await client.auth.signOut().catch(() => {});
+              $("appView").classList.add("hidden");
+              $("loginView").classList.remove("hidden");
+              const msg = $("loginMessage") || $("loginMsg");
+              if (msg) msg.textContent = "No se pudieron verificar los permisos de Administración: " + (e?.message || "error desconocido");
+            }
+          }
+          client.auth.getSession().then(({data,error}) => {
+            if (!error && data?.session) activateAdminSession();
+          });
+          client.auth.onAuthStateChange((event, session) => {
+            if (event === "SIGNED_OUT") {
+              $("appView").classList.add("hidden");
+              $("loginView").classList.remove("hidden");
+            }
+          });''';
+                  s = s.replace(pattern, replacement);
+                  print("Restauración de sesión protegida con verificación de rol admin.");
+              else:
+                  # If package already uses role validation, keep it; otherwise fail closed.
+                  if "my_roles" not in s:
+                      raise SystemExit("ERROR: app.js no contiene una verificación de rol reconocible; se cancela la publicación.")
+                  print("La versión de app.js ya incluye comprobación de roles; no se duplicó el control.")
+              p.write_text(s, encoding="utf-8")
+          else:
+              print("La protección de sesión ya está instalada.")
+          PY
 
           # Conservar la función del servidor para publicarla por separado en Supabase.
           if [[ -s "$panel_dir/supabase/functions/administrar-usuarios/index.ts" ]]; then
