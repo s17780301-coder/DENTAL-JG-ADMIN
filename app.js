@@ -83,6 +83,22 @@ async function loadPortfolios(){
  if(error){fail(error,"No se pudieron consultar las carteras");body.innerHTML='<tr><td colspan="6">No fue posible cargar carteras.</td></tr>';return}
  body.innerHTML=(data||[]).map(p=>`<tr><td>${safe(p.quincena_date||"—")}</td><td>${safe(p.patient_name||p.titular_name||"—")}</td><td>${safe(p.clinic||"—")}</td><td>${safe(p.policy_number||"—")}</td><td>${money(p.balance_net)}</td><td>${safe(p.manager_id||"—")}</td></tr>`).join("")||'<tr><td colspan="6">No hay carteras visibles.</td></tr>';
 }
+let selectedApp="";
+const appLabels={patients:"Registro de clientes",collection:"Cobranza",admin:"Administración"};
+document.querySelectorAll("[data-select-app]").forEach(button=>button.addEventListener("click",()=>{
+ selectedApp=button.dataset.selectApp;
+ $("selectedAppLabel").textContent=appLabels[selectedApp]||"Aplicación";
+ $("appPicker").classList.add("hidden");
+ $("login").classList.remove("hidden");
+ $("loginMsg").textContent="";
+ $("email").focus();
+}));
+$("backToApps").addEventListener("click",()=>{
+ $("login").classList.add("hidden");
+ $("appPicker").classList.remove("hidden");
+ $("loginForm").reset();
+ $("loginMsg").textContent="";
+});
 $("loginForm").addEventListener("submit",async e=>{
  e.preventDefault();if(!ready){showLogin("Falta configurar config.js con URL y clave pública de Supabase.");return}
  showLogin("Validando cuenta y permisos…");$("loginForm").querySelector("button").disabled=true;
@@ -94,7 +110,9 @@ $("loginForm").addEventListener("submit",async e=>{
   $("login").classList.add("hidden");$("app").classList.remove("hidden");$("userEmail").textContent=user.email||"Usuario";
   $("today").textContent=new Intl.DateTimeFormat("es-MX",{dateStyle:"medium"}).format(new Date());
   setNavigation();await loadData();
-  const first=role==="registro"?"patients":role==="cobranza"?"collection":"admin";view(first);
+  const permitted=allowed(selectedApp);
+  if(!permitted){await db.auth.signOut();$("app").classList.add("hidden");$("login").classList.remove("hidden");throw new Error("Tu cuenta no tiene permiso para entrar a "+(appLabels[selectedApp]||"esta aplicación")+".");}
+  view(selectedApp);
  }catch(err){showLogin(err.message||"Acceso denegado.");if(db)await db.auth.signOut().catch(()=>{});}
  finally{$("loginForm").querySelector("button").disabled=false}
 });
