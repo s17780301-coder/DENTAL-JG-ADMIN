@@ -54,3 +54,77 @@ body::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:0;height
  .portal-footer{font-size:12px;line-height:1.5;padding:0 5px}
  .login-card{padding:24px 20px;border-radius:23px}
 }
+
+
+/* DENTAL_JG_OFFICIAL_LOGO_RATIO_FIX */
+#appPicker .portal-header {
+  min-height: 0 !important;
+  padding: clamp(22px, 4vw, 38px) clamp(16px, 4vw, 30px) !important;
+  gap: 14px !important;
+}
+#appPicker .portal-logo-frame {
+  display: block !important;
+  width: min(440px, 88vw) !important;
+  height: auto !important;
+  aspect-ratio: auto !important;
+  flex: 0 1 auto !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#appPicker .portal-logo {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 2018 / 779;
+  object-fit: contain !important;
+  object-position: center !important;
+  background: transparent !important;
+}
+#appPicker .portal-brand { margin-top: 2px; }
+.login-logo {
+  width: min(330px, 84vw) !important;
+  height: auto !important;
+  aspect-ratio: 2018 / 779;
+  margin: 0 auto !important;
+  display: block !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.login-logo img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  aspect-ratio: 2018 / 779;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.brand-logo {
+  width: min(220px, 100%) !important;
+  flex: 0 1 auto !important;
+}
+.brand-logo img {
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  object-fit: contain !important;
+}
+@media (max-width: 700px) {
+  #appPicker .portal-logo-frame { width: min(360px, 88vw) !important; }
+  #appPicker .portal-header { min-height: 0 !important; }
+  .login-logo { width: min(300px, 84vw) !important; }
+}
