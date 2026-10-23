@@ -50,19 +50,32 @@ jobs:
                 echo "Aviso: se omite ZIP no válido: $zip"
                 continue
               fi
+              # No elegir el primer index.html completo: el ZIP puede contener la app Admon.
+              # Seleccionar primero la portada integral que define el selector de módulos appPicker.
+              fallback_dir=""
               while IFS= read -r -d '' candidate; do
                 dir="$(dirname "$candidate")"
                 complete=true
                 for file in "${required[@]}"; do
                   [[ -s "$dir/$file" ]] || complete=false
                 done
-                if [[ "$complete" == true ]]; then
+                [[ "$complete" == true ]] || continue
+                html="$(cat "$candidate")"
+                if [[ "$html" == *'id="appPicker"'* && "$html" == *'data-view="patients"'* && "$html" == *'data-view="collection"'* && "$html" == *'data-view="admin"'* ]]; then
                   panel_dir="$dir"
+                  echo "Portada integral verificada en $zip: $panel_dir"
                   break
                 fi
+                # Como segunda opción, aceptar una página unificada con los tres módulos explícitos.
+                if [[ "$html" == *'Registro de clientes'* && "$html" == *'Cobranza'* && "$html" == *'Administración'* ]]; then
+                  fallback_dir="$dir"
+                fi
               done < <(find extracted -type f -name index.html -print0)
+              if [[ -z "$panel_dir" && -n "$fallback_dir" ]]; then
+                panel_dir="$fallback_dir"
+                echo "Panel unificado alternativo encontrado en $zip: $panel_dir"
+              fi
               if [[ -n "$panel_dir" ]]; then
-                echo "Panel encontrado en $zip: $panel_dir"
                 break
               fi
             done
