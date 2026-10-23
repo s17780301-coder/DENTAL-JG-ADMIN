@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           SRC="$RUNNER_TEMP/dental-jg-apps.zip"
           ROOT="$RUNNER_TEMP/dental-jg-src"
-          curl -fL --retry 3 "https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/DENTAL_JG_APLICACIONES_REPARACION_ACCESO_1_0_7.zip" -o "$SRC"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/DENTAL_JG_1_0_6_APPS_WEB_SQL_ACTUALIZADO.zip" -o "$SRC"
           mkdir -p "$ROOT"
           unzip -q "$SRC" -d "$ROOT"
 
