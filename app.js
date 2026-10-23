@@ -87,7 +87,7 @@ async function loadData(){
 function render(){
  const term=($("patientSearch").value||"").toLowerCase();
  const filtered=patients.filter(p=>[p.name,p.policy_number,p.clinic,p.phone].some(v=>String(v||"").toLowerCase().includes(term)));
- $("patientRows").innerHTML=filtered.map(p=>`<tr><td>${safe(p.name)}</td><td>${safe(p.clinic||"—")}</td><td>${safe(p.policy_number||"—")}</td><td>${safe(p.treatment||"—")}</td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td>${money(Math.max(0,Number(p.total||0)-Number(p.paid||0)))}</td></tr>`).join("")||'<tr><td colspan="7">No se encontraron clientes.</td></tr>';
+ $("patientRows").innerHTML=filtered.map(p=>`<tr><td>${safe(p.name)}</td><td>${safe(p.clinic||"—")}</td><td>${safe(p.policy_number||"—")}</td><td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td>${money(Math.max(0,Number(p.total||0)-Number(p.paid||0)))}</td></tr>`).join("")||'<tr><td colspan="6">No se encontraron clientes.</td></tr>';
  $("payPatient").innerHTML='<option value="">Selecciona cliente</option>'+patients.map(p=>`<option value="${safe(p.id)}">${safe(p.name)} · póliza ${safe(p.policy_number||"—")} · saldo ${money(Math.max(0,Number(p.total||0)-Number(p.paid||0)))}</option>`).join("");
  const name=id=>patients.find(p=>String(p.id)===String(id))?.name||"Cliente";
  const pterm=($("paymentSearch").value||"").toLowerCase();
@@ -218,7 +218,7 @@ $("patientForm").addEventListener("submit",async e=>{
  const total=Number($("pTotal").value),inst=Math.trunc(Number($("pInstallments").value)),ia=Number($("pInstallmentAmount").value);
  if(!name||!clinic||!policy||!Number.isFinite(total)||total<0||!Number.isInteger(inst)||inst<1||!Number.isFinite(ia)||ia<0){$("patientMsg").textContent="Verifica los campos obligatorios.";return}
  if(patients.some(p=>String(p.policy_number||"").trim().toLowerCase()===policy.toLowerCase())){$("patientMsg").textContent="Esa póliza ya existe en los registros visibles.";return}
- const payload={name,phone:$("pPhone").value.trim(),phone2:$("pPhone2").value.trim()||null,treatment:$("pTreatment").value,clinic,policy_number:policy,total,paid:0,installments:inst,installment_amount:ia,address:$("pAddress").value.trim()||null,observations:$("pObservations").value.trim()||null,source_device:"DENTAL JG PANEL"};
+ const payload={name,phone:$("pPhone").value.trim(),phone2:$("pPhone2").value.trim()||null,clinic,policy_number:policy,total,paid:0,installments:inst,installment_amount:ia,address:$("pAddress").value.trim()||null,observations:$("pObservations").value.trim()||null,source_device:"DENTAL JG PANEL"};
  $("patientMsg").textContent="Guardando…";
  const {error}=await db.from("patients").insert(payload);
  if(error){fail(error,"No se pudo guardar el cliente");$("patientMsg").textContent="No guardado";return}
