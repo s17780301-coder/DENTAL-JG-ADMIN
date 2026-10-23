@@ -35,6 +35,11 @@ jobs:
           done
 
           if [[ "$root_ready" == true ]]; then
+            # Evitar que un index de ADMON APP se publique como si fuera el portal integral.
+            if ! grep -q 'data-view="patients"' index.html || ! grep -q 'data-view="collection"' index.html || ! grep -q 'data-view="admin"' index.html; then
+              echo "::error::El index.html de la raíz no contiene los tres módulos del panel integral."
+              exit 1
+            fi
             echo "Usando archivos del PANEL INTEGRAL ubicados en la raíz del repositorio."
             panel_dir="."
             cp "${required[@]}" public/
