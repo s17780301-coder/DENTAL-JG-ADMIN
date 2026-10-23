@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1769c2"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png" type="image/svg+xml"><title>Admon App</title>
+  <link rel="stylesheet" href="styles.css?v=1.0.6.6">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div id="brandIntro" class="brand-intro" aria-hidden="true"><div class="brand-intro-card"><img class="brand-logo-login" src="logo-dental-jg.png?v=1.0.1" alt="DENTAL JG"><span>ADMON APP</span><small>Tu administración, en orden.</small><div class="intro-progress"><i></i></div></div></div>
+  <main id="loginView" class="login-shell">
+    <section class="login-card">
+      <img class="brand-logo-login" src="logo-dental-jg.png?v=1.0.1" alt="DENTAL JG"><p class="eyebrow">CONTROL ADMINISTRATIVO</p>
+      <p class="muted">Cobranza clara. Información al día.</p>
+      <form id="loginForm" class="stack">
+        <label>Correo administrativo<input id="email" type="email" autocomplete="username" placeholder="admin@tudominio.com" required></label>
+        <label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required></label>
+        <button class="primary" type="submit">Iniciar sesión</button>
+      </form>
+      <p id="loginMessage" class="message" role="status"></p>
+      <p class="tiny">Acceso privado para personal autorizado.</p>
+    </section>
+  </main>
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand-row"><img class="brand-logo-sidebar" src="logo-dental-jg.png?v=1.0.1" alt="DENTAL JG"><div><small>Administración</small></div></div>
+      <nav aria-label="Menú principal"><button class="nav active" data-page="overview">▦ <span>Resumen</span></button><button class="nav nav-role-entry" data-page="users" aria-label="Abrir Registro de roles">♙ <span>Registro de roles</span></button><button class="nav" data-page="patients">♙ <span>Pacientes</span></button><button class="nav" data-page="payments">↗ <span>Cobranza</span></button><button class="nav" data-page="clinics">⌂ <span>Clínicas</span></button><button class="nav" data-page="managers">♙ <span>Gestores</span></button><button class="nav" data-page="reports">▤ <span>Reportes quincenales</span></button></nav>
+      <div class="side-bottom"><div class="connection"><i id="connectionDot"></i><span id="connectionText">Conectando…</span></div><button id="logoutBtn" class="logout">Cerrar sesión ↗</button></div>
+    </aside>
+    <section class="content">
+      <header class="topbar"><div><p class="eyebrow">PANEL ADMINISTRATIVO</p><h2 id="pageTitle">Resumen general</h2><label class="clinic-filter-label" for="clinicFilter">Clínica que estás viendo</label><select id="clinicFilter" class="clinic-filter"><option value="__all__">Todas las clínicas</option></select></div><div class="user-chip"><div class="avatar">A</div><div><b>Administrador</b><small id="todayLabel"></small></div></div></header>
+      <div id="setupNotice" class="notice hidden"><b>Falta conectar la base de datos.</b><span>Abre <code>config.js</code> y coloca la URL y la clave pública de tu proyecto Supabase. Consulta LEEME.txt.</span></div>
+      <section id="overviewPage" class="page">
+        <div class="welcome"><div><p class="eyebrow light">BIENVENIDO A ADMON APP</p><h3>Tu cobranza, bajo control.</h3><p>Revisa los movimientos y el estado de tus pacientes en un solo lugar.</p></div><div class="welcome-icon">✦</div></div>
+        <div class="metric-grid">
+          <article class="metric metric-clickable" data-goto="patients" role="button" tabindex="0" aria-label="Abrir pacientes registrados"><div class="metric-icon blue">♙</div><p>Pacientes registrados</p><strong id="metricPatients">—</strong><small>Ver directorio de pacientes →</small></article>
+          <article class="metric"><div class="metric-icon green">$</div><p>Cobranza quincenal prevista</p><strong id="metricCollected">—</strong><small>Suma de pagos quincenales, sin pólizas</small></article>
+          <article class="metric"><div class="metric-icon amber">◷</div><p>Pagos registrados</p><strong id="metricPending">—</strong><small>Abonos capturados en el sistema</small></article>
+          <article class="metric"><div class="metric-icon violet">✓</div><p>Pacientes al corriente</p><strong id="metricPaid">—</strong><small>Sin saldo pendiente</small></article>
+          <article class="metric metric-clickable" data-goto="managers" role="button" tabindex="0" aria-label="Ver gestores y total cobrado"><div class="metric-icon blue">♙</div><p>Total cobrado por gestores</p><strong id="metricManagerTotal">—</strong><small id="metricManagerSummary">Consulta el rendimiento de cada gestor →</small></article>
+        </div>
+        <section class="role-access-card" aria-labelledby="roleAccessTitle">
+          <div><p class="role-access-kicker">ACCESO ADMINISTRATIVO</p><h3 id="roleAccessTitle">Registro de roles</h3><p>Crea cuentas y asigna permisos para Administración, Gestor, Cobranza y Registro de clientes.</p></div>
+          <button class="primary" type="button" data-goto="users">Abrir registro de roles →</button>
+        </section>
+        <div class="section-heading"><div><h3>Cobrado por gestor</h3><p>Importes registrados en recibos por cada gestor.</p></div><button class="outline" data-goto="managers">Administrar gestores →</button></div><div class="table-card"><div class="table-wrap"><table><thead><tr><th>Gestor</th><th>Teléfono</th><th>Carteras</th><th>Total cobrado</th><th>Estado</th></tr></thead><tbody id="managerSummaryRows"><tr><td colspan="5" class="empty">Conecta la base de datos para mostrar los gestores.</td></tr></tbody></table></div></div>
+        <div class="section-heading"><div><h3>Actividad reciente</h3><p>Los movimientos más recientes registrados.</p></div><button class="outline" data-goto="payments">Ver cobranza →</button></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Movimiento</th><th>Fecha</th><th>Importe</th></tr></thead><tbody id="recentRows"><tr><td colspan="4" class="empty">Conecta la base de datos para mostrar información.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="patientsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Directorio de clientes</h3><p>El alta de clientes está centralizada exclusivamente en Registro de clientes.</p></div></div>
+        <div class="clinic-form-card"><p class="form-hint"><strong>Altas centralizadas:</strong> los pacientes nuevos se registran exclusivamente desde la aplicación Registro de Clientes.</p></div>
+        <div class="section-heading"><div><h3>Directorio de pacientes</h3><p>Consulta información clínica y saldos.</p></div><div class="toolbar"><input id="patientSearch" class="search" placeholder="Buscar por póliza, folio, nombre, dirección o teléfono…"><button id="refreshPatients" class="outline" type="button">Actualizar ↻</button></div></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Folio</th><th>Paciente</th><th>Teléfono</th><th>Dirección</th><th>Clínica</th><th>Póliza</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Acciones</th></tr></thead><tbody id="patientRows"><tr><td colspan="10" class="empty">No hay datos todavía.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="clinicsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Administrar clínicas</h3><p>Agrega las clínicas que quieras manejar desde este mismo panel.</p></div></div>
+        <div class="clinic-form-card"><form id="clinicForm" class="clinic-form"><label for="clinicName">Nombre de la nueva clínica</label><div class="clinic-form-row"><input id="clinicName" maxlength="100" placeholder="Ej. DENTAL JG Centro" required><button class="primary" type="submit">+ Agregar clínica</button></div><p class="form-hint">La clínica se guardará en Supabase y aparecerá en el selector para filtrar el panel.</p></form></div>
+        <div class="section-heading"><div><h3>Clínicas registradas</h3><p id="clinicCount">0 clínicas</p></div><button id="refreshClinics" class="outline" type="button">Actualizar ↻</button></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Clínica</th><th>Pacientes</th><th>Acción</th></tr></thead><tbody id="clinicRows"><tr><td colspan="3" class="empty">Carga las clínicas para comenzar.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="managersPage" class="page hidden">
+        <div class="section-heading"><div><h3>Administrar gestores</h3><p>Registra cada gestor y asígnale una clave que usará para identificarse.</p></div><button id="refreshManagers" class="outline" type="button">Actualizar ↻</button></div>
+        <div class="clinic-form-card"><form id="managerForm" class="clinic-form"><label>Nombre del gestor</label><div class="clinic-form-row"><input id="managerName" maxlength="140" required placeholder="Nombre completo"><input id="managerPhone" maxlength="40" placeholder="Teléfono (opcional)"><input id="managerKey" maxlength="40" required autocomplete="off" placeholder="Clave de gestor"><button class="primary" type="submit">+ Agregar gestor</button></div><p id="managerMsg" class="form-hint"></p></form></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Gestor</th><th>Teléfono</th><th>Carteras</th><th>Total cobrado registrado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="adminManagerRows"><tr><td colspan="6" class="empty">Carga los gestores.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="reportsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Archivo de reportes quincenales</h3><p>Listados guardados por Cobranza. Cada reporte conserva la lista usada para imprimir esa quincena.</p></div><button id="refreshReports" class="outline" type="button">Actualizar ↻</button></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Quincena</th><th>Gestor</th><th>Recibos / clientes</th><th>Generado</th><th>Acción</th></tr></thead><tbody id="adminReportRows"><tr><td colspan="5" class="empty">Todavía no hay reportes archivados.</td></tr></tbody></table></div></div><p id="reportsMsg" class="form-hint"></p>
+      </section>
+      <section id="usersPage" class="page hidden">
+        <div class="section-heading"><div><h3>Registro de roles y usuarios</h3><p>Crea cuentas y asigna los mismos roles admitidos por el panel web: Registro, Cobranza y Administración. Disponible solo para la cuenta autorizada de Administración.</p></div><button id="refreshUsers" class="outline" type="button">Actualizar usuarios</button></div>
+        <div class="clinic-form-card"><h3>Crear cuenta de acceso</h3><form id="createUserForm" class="clinic-form"><div class="clinic-form-row"><input id="newUserEmail" type="email" required maxlength="254" placeholder="Correo electrónico"><input id="newUserPassword" type="password" required minlength="8" maxlength="128" placeholder="Contraseña temporal"><select id="newUserRole" required><option value="registro">Registro de clientes</option><option value="cobranza">Cobranza</option><option value="admin">Administración</option></select><button class="primary" type="submit">Crear usuario</button></div></form><p id="userAdminMessage" class="form-hint" role="status" aria-live="polite"></p></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Correo</th><th>Roles</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="userAdminRows"><tr><td colspan="4" class="empty">Pulsa actualizar usuarios.</td></tr></tbody></table></div></div>
+        <div class="clinic-form-card"><h3>Mi cuenta de Administración</h3><form id="ownAccountForm" class="clinic-form"><label>Correo actual</label><input id="ownCurrentEmail" type="email" readonly><label>Nuevo correo (opcional)</label><input id="ownNewEmail" type="email" maxlength="254" placeholder="Nuevo correo"><label>Nueva contraseña (opcional)</label><input id="ownNewPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Mínimo 8 caracteres"><label>Confirmar contraseña</label><input id="ownConfirmPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password"><button class="primary" type="submit">Guardar cambios de mi cuenta</button></form><p id="ownAccountMessage" class="form-hint" role="status" aria-live="polite">Las contraseñas nunca se muestran.</p></div>
+      </section>
+      <section id="paymentsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Registro de cobranza</h3><p>Historial de pagos confirmados.</p></div><div class="toolbar"><input id="paymentSearch" class="search" placeholder="Buscar por póliza, folio, nombre, dirección o teléfono…"><button id="refreshPayments" class="outline">Actualizar ↻</button></div></div>
+        <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Fecha y hora</th><th>Concepto</th><th>Importe</th><th>Referencia</th></tr></thead><tbody id="paymentRows"><tr><td colspan="5" class="empty">No hay pagos todavía.</td></tr></tbody></table></div></div>
+      </section>
+      <section id="receiptsPage" class="page hidden">
+        <div class="section-heading"><div><h3>Diseño e impresión de recibos</h3><p>Elige cualquiera de los 10 modelos; la vista previa cambia de inmediato.</p></div></div>
+        <div class="receipt-tools">
+          <label>Modelo de recibo<select id="panelReceiptDesign"><option value="1">Diseño 01 — Clásico verde</option><option value="2">Diseño 02 — Turquesa limpio</option><option value="3">Diseño 03 — Azul profesional</option><option value="4">Diseño 04 — Minimalista</option><option value="5">Diseño 05 — Banda superior</option><option value="6">Diseño 06 — Doble línea</option><option value="7">Diseño 07 — Elegante oscuro</option><option value="8">Diseño 08 — Marco fino</option><option value="9">Diseño 09 — Compacto</option><option value="10">Diseño 10 — Institucional</option></select></label>
+          <label>Nombre del paciente<input id="panelReceiptPatient" placeholder="Nombre completo"></label>
+          <label>Folio<input id="panelReceiptFolio" placeholder="JG-000001"></label>
+          <label>Importe recibido<input id="panelReceiptAmount" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label>Concepto<input id="panelReceiptConcept" value="Abono quincenal"></label>
+          <label>Fecha<input id="panelReceiptDate" type="date"></label>
+          <div class="receipt-actions"><button id="panelReceiptPreview" class="outline" type="button">Actualizar vista previa</button><button id="panelReceiptPrint" class="primary" type="button">Imprimir 4 por hoja</button></div>
+        </div>
+        <div id="panelReceiptPreviewArea" class="panel-receipt-preview" aria-live="polite"></div>
+        <p class="form-hint">La función de esta pantalla es previsualizar e imprimir el formato. No registra ni modifica pagos en la base de datos.</p>
+      </section>
+      <footer> Admon App <span>Los datos se actualizan al recibir cambios de la base de datos.</span></footer>
+    </section>
+  </div>
+  <section id="patientDialog" class="patient-dialog hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="patientDialogTitle">
+    <div class="patient-dialog-card">
+      <div class="patient-dialog-header"><div><p class="eyebrow">EXPEDIENTE</p><h2 id="patientDialogTitle">Paciente</h2><p class="muted">Información y movimientos de este paciente.</p></div><button id="closePatientDialog" class="dialog-close" type="button" aria-label="Cerrar expediente">×</button></div>
+      <div id="patientDialogDetails" class="patient-details-grid"></div>
+      <div class="section-heading"><div><h3>Historial de pagos</h3><p>Abonos registrados para este paciente.</p></div></div>
+      <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Importe</th><th>Referencia</th></tr></thead><tbody id="patientDialogPayments"><tr><td colspan="4" class="empty">No hay pagos registrados.</td></tr></tbody></table></div></div>
+      <div class="dialog-actions"><button id="editPatientManual" class="outline" type="button">Editar cliente</button><button id="deletePatientManual" class="outline danger-action" type="button">Eliminar cliente y pagos</button><button class="primary" type="button" onclick="document.getElementById('patientDialog').classList.add('hidden');document.getElementById('patientDialog').setAttribute('aria-hidden','true')">Cerrar expediente</button></div>
+    </div>
+  </section>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="config.js?v=1.0.6.6"></script><script src="app.js?v=1.0.6.7"></script><script>window.DENTAL_APP_NAME="Administración";</script><script>if("serviceWorker" in navigator && location.protocol.startsWith("http")){navigator.serviceWorker.register("service-worker.js?v=1.0.7",{updateViaCache:"none"}).then(reg=>reg.update()).catch(()=>{});}</script>
+<div class="app-version">Versión 1.0.6</div></body></html>

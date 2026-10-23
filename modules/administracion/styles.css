@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{--navy:#1769c2;--navy2:#0b3d91;--teal:#19b9b0;--ink:#172b4d;--muted:#7c8da5;--bg:#f4f7fb;--line:#e5ebf2;--white:#fff;--shadow:0 14px 40px rgba(16,42,67,.07)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif}h1,h2,h3,p{margin-top:0}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}.login-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 15%,#d9f4f0 0,transparent 30%),radial-gradient(circle at 90% 80%,#dce8fa 0,transparent 34%),#f5f8fc}.login-card{width:min(100%,430px);background:white;padding:42px;border-radius:28px;box-shadow:0 28px 80px #183b5620;border:1px solid #ffffff}.brand-mark{height:62px;width:62px;border-radius:19px;background:linear-gradient(140deg,#19b9b0,#1769c2);display:grid;place-items:center;color:white;font:800 20px Manrope;letter-spacing:-1px;box-shadow:0 8px 20px #19b9b040}.brand-mark.small{height:44px;width:44px;border-radius:14px;font-size:15px}.eyebrow{font-size:10px;letter-spacing:2px;font-weight:700;color:var(--teal);margin:24px 0 8px}.login-card h1{font:800 30px Manrope;letter-spacing:-1.3px;margin-bottom:7px}.login-card h1 span{color:var(--teal)}.muted,.tiny{color:var(--muted)}.stack{display:grid;gap:17px;margin-top:28px}.stack label{font-size:12px;font-weight:700;display:grid;gap:8px}.stack input,.search{width:100%;border:1px solid #dce5ef;background:#f9fbfd;border-radius:12px;padding:13px 14px;outline:none;color:#172b4d}.stack input:focus,.search:focus{border-color:#19b9b0;box-shadow:0 0 0 3px #19b9b01c}.primary{border:0;border-radius:12px;padding:14px;background:var(--navy);color:white;font-weight:700;box-shadow:0 8px 20px #1769c225}.primary:hover{background:#1c4969}.message{min-height:20px;color:#b04444;font-size:12px}.tiny{font-size:11px;text-align:center;margin-bottom:0}.app{min-height:100vh;display:grid;grid-template-columns:245px minmax(0,1fr)}.sidebar{background:linear-gradient(180deg,#1769c2,#0b2034);color:white;padding:28px 18px;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh}.brand-row{display:flex;align-items:center;gap:12px;padding:0 10px 38px}.brand-row b{display:block;font:800 14px Manrope;letter-spacing:.3px}.brand-row small{display:block;color:#a9bdce;font-size:11px;margin-top:4px}.sidebar nav{display:grid;gap:8px}.nav{border:0;background:transparent;color:#b8c8d7;text-align:left;padding:14px 15px;border-radius:12px;display:flex;gap:13px;align-items:center;font-size:18px}.nav span{font-size:13px;font-weight:600}.nav:hover,.nav.active{background:#ffffff16;color:white}.nav.active{box-shadow:inset 3px 0 var(--teal)}.side-bottom{margin-top:auto}.connection{display:flex;align-items:center;gap:9px;font-size:11px;color:#afc3d3;padding:12px}.connection i{width:8px;height:8px;background:#d7a34a;border-radius:50%}.connection i.ok{background:#43d5a0}.logout{width:100%;border:1px solid #ffffff24;color:#d6e2eb;background:transparent;border-radius:11px;padding:12px;font-size:12px}.content{padding:30px clamp(18px,4vw,54px) 20px;min-width:0;max-width:1600px;width:100%;margin:auto}.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:28px}.topbar .eyebrow{margin:0 0 7px}.topbar h2{font:800 clamp(22px,3vw,29px) Manrope;letter-spacing:-.8px;margin:0}.user-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);padding:8px 13px;border-radius:15px}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#ddf7f4;color:#0b8f89;font-weight:800}.user-chip b,.user-chip small{display:block}.user-chip b{font-size:11px}.user-chip small{font-size:10px;color:var(--muted);margin-top:3px}.welcome{border-radius:22px;padding:27px 30px;background:linear-gradient(115deg,#1769c2,#0b3d91);color:white;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative;margin-bottom:22px}.welcome:after{content:'';position:absolute;right:70px;top:-90px;width:260px;height:260px;border:1px solid #ffffff1c;border-radius:50%;box-shadow:0 0 0 35px #ffffff08,0 0 0 70px #ffffff05}.welcome .eyebrow{color:#7be6df;margin:0 0 10px}.welcome h3{font:800 clamp(21px,3vw,29px) Manrope;letter-spacing:-.8px;margin-bottom:8px}.welcome p:not(.eyebrow){color:#d1e3e8;font-size:12px;margin:0}.welcome-icon{font-size:58px;color:#7be6df;z-index:1;margin-right:20px}.metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:15px;margin-bottom:31px}.metric{padding:21px;background:white;border:1px solid var(--line);border-radius:17px;box-shadow:0 6px 20px #1769c204}.metric-icon{height:38px;width:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;font-weight:700;margin-bottom:17px}.blue{background:#e7f0ff;color:#4378d8}.green{background:#e0f8f0;color:#199d78}.amber{background:#fff1d9;color:#c98a22}.violet{background:#f0eaff;color:#8060cb}.metric p{font-size:11px;color:var(--muted);margin-bottom:7px}.metric strong{font:800 clamp(20px,2.3vw,28px) Manrope;display:block;letter-spacing:-1px;overflow-wrap:anywhere}.metric small{display:block;color:#9aa9ba;font-size:10px;margin-top:7px}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:25px 0 15px}.section-heading h3{font:800 17px Manrope;margin:0 0 5px}.section-heading p{font-size:11px;color:var(--muted);margin:0}.outline{border:1px solid #dce5ef;background:#fff;color:var(--ink);border-radius:10px;padding:10px 13px;font-size:11px;font-weight:700;white-space:nowrap}.outline:hover{border-color:var(--teal);color:#0b8f89}.table-card{background:white;border:1px solid var(--line);border-radius:17px;overflow:hidden;box-shadow:0 6px 20px #1769c204}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th{text-align:left;background:#f9fbfd;color:#8091a6;font-size:10px;letter-spacing:.6px;text-transform:uppercase;padding:15px 18px;font-weight:700}td{padding:15px 18px;border-top:1px solid #edf1f6;font-size:11px;color:#4a5e75}td:first-child{font-weight:700;color:#20364e}.empty{text-align:center;color:#94a3b5;padding:30px!important}.toolbar{display:flex;gap:9px;align-items:center}.search{width:210px;padding:10px 12px;font-size:11px;background:#fff}.notice{display:grid;gap:5px;background:#fff6df;border:1px solid #f1d89a;color:#735515;border-radius:12px;padding:15px;margin-bottom:20px;font-size:12px}.notice span{line-height:1.6}.notice code{background:#f7e9bd;padding:2px 5px;border-radius:4px}.pill{display:inline-block;border-radius:99px;padding:5px 8px;font-size:10px;background:#e2f7ef;color:#138261}.money{font-weight:700;color:#15836f}footer{display:flex;justify-content:space-between;gap:15px;color:#9aa9ba;font-size:10px;padding:28px 2px 5px}footer span{text-align:right}.toast{position:fixed;bottom:22px;right:22px;background:#1769c2;color:white;padding:13px 17px;border-radius:12px;font-size:12px;box-shadow:var(--shadow);display:none;max-width:calc(100% - 44px);z-index:9}.toast.show{display:block}@media(max-width:1050px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.app{grid-template-columns:205px minmax(0,1fr)}.sidebar{padding-inline:12px}.content{padding:25px 22px}}@media(max-width:700px){.app{display:block}.sidebar{position:relative;top:auto;height:auto;min-height:0;padding:13px 15px}.brand-row{padding:0 3px 13px}.sidebar nav{display:flex;gap:5px}.nav{flex:1;justify-content:center;padding:10px 6px}.nav span{font-size:11px}.side-bottom{position:absolute;right:15px;top:17px}.connection{display:none}.logout{width:auto;padding:9px;font-size:10px}.content{padding:20px 14px}.topbar{align-items:flex-start}.user-chip{padding:6px}.user-chip b{display:none}.welcome{padding:23px 20px}.welcome-icon{font-size:40px;margin-right:0}.metric-grid{gap:10px}.metric{padding:15px}.metric strong{font-size:21px}.section-heading{align-items:flex-start;flex-direction:column}.toolbar{width:100%}.search{flex:1;width:50px}footer{flex-direction:column}footer span{text-align:left}.login-card{padding:30px 24px}}@media(prefers-reduced-motion:no-preference){.metric,.table-card,.welcome{animation:rise .35s ease both}@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}}
+
+/* Selector y administración de clínicas */
+.clinic-filter-label{display:block;margin-top:12px;margin-bottom:5px;color:var(--muted);font-size:10px;font-weight:700}.clinic-filter{min-width:220px;max-width:100%;padding:10px 12px;border:1px solid #dce5ef;border-radius:10px;background:#fff;color:var(--ink);font:600 12px 'DM Sans',sans-serif;outline:none}.clinic-filter:focus{border-color:var(--teal);box-shadow:0 0 0 3px #19b9b01c}.clinic-form-card{padding:22px;background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 6px 20px #1769c204}.clinic-form label{display:block;font-size:12px;font-weight:700;margin-bottom:9px}.clinic-form-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch}.clinic-form-row input,.clinic-form-row select{box-sizing:border-box;width:100%;min-width:0;min-height:48px;height:48px;border:1px solid #dce5ef;background:#f9fbfd;border-radius:12px;padding:12px 14px;color:var(--ink);outline:none;font:inherit;font-size:14px;line-height:1.25;display:block;appearance:auto;-webkit-appearance:menulist}.clinic-form-row input:focus,.clinic-form-row select:focus{border-color:var(--teal);box-shadow:0 0 0 3px #19b9b01c}.clinic-form-row input:focus{border-color:var(--teal);box-shadow:0 0 0 3px #19b9b01c}.clinic-form-row .primary{white-space:normal;min-height:48px;align-self:stretch}.form-hint{font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5}.clinic-tag{display:inline-block;padding:6px 9px;background:#e4f7f3;color:#117c72;border-radius:8px;font-weight:700;font-size:11px}.small-action{border:1px solid #dce5ef;background:#fff;color:var(--ink);border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700}.small-action:hover{border-color:var(--teal);color:#0b8f89}
+@media(max-width:700px){.clinic-form-row{grid-template-columns:minmax(0,1fr)}.clinic-form-row input,.clinic-form-row select{height:50px;min-height:50px;font-size:16px}.clinic-form-row .primary{width:100%;min-height:50px}.topbar{flex-wrap:wrap}.topbar>div:first-child{width:100%}.clinic-filter{width:100%}.clinic-form-row{flex-direction:column}.clinic-form-row .primary{width:100%}.sidebar nav{flex-wrap:wrap}.nav{min-width:calc(50% - 5px)}}
+
+.patient-form-card{margin-bottom:24px}.patient-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}.patient-form label{align-self:end;font-size:12px;font-weight:700;margin-top:5px}.patient-form input,.patient-form select{width:100%;min-width:0;border:1px solid #dce5ef;background:#f9fbfd;border-radius:12px;padding:12px 13px;color:var(--ink);outline:none;font:inherit}.patient-form input:focus,.patient-form select:focus{border-color:var(--teal);box-shadow:0 0 0 3px #19b9b01c}.patient-form button,.patient-form .form-hint{grid-column:1/-1}.patient-form button{justify-self:start;min-width:200px;margin-top:5px}@media(max-width:700px){.patient-form{grid-template-columns:1fr}.patient-form button,.patient-form .form-hint{grid-column:1}.patient-form button{width:100%}}
+
+/* Ajustes de experiencia: encabezado azul, expedientes y formulario por clínica */
+.welcome{background:linear-gradient(115deg,#0b3d91,#1769c2)!important}.welcome .eyebrow{color:#bcd8ff!important}.welcome-icon{color:#d6e7ff!important}
+.patient-row{cursor:pointer}.patient-row:hover{background:#f0f6ff}.patient-name-link{border:0;background:transparent;color:#1558a6;font:700 12px 'DM Sans',sans-serif;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.patient-name-link:hover{color:#0b3d91}
+.patient-dialog{position:fixed;inset:0;z-index:20;background:#07182bd9;display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto}.patient-dialog.hidden{display:none}.patient-dialog-card{background:#fff;border-radius:20px;box-shadow:0 24px 80px #07182b55;width:min(900px,100%);max-height:calc(100vh - 36px);overflow:auto;padding:26px}.patient-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:18px}.patient-dialog-header .eyebrow{margin:0 0 7px;color:#1769c2}.patient-dialog-header h2{font:800 24px Manrope;color:#1769c2;margin:0 0 5px}.patient-dialog-header p{margin:0}.dialog-close{width:38px;height:38px;flex:0 0 38px;border:0;border-radius:12px;background:#eaf2fc;color:#0b3d91;font-size:28px;line-height:1;cursor:pointer}.patient-details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.detail-item{padding:13px;border:1px solid #e1eaf5;border-radius:12px;background:#f8fbff;min-width:0}.detail-item small{display:block;color:#71839b;font-size:10px;margin-bottom:7px}.detail-item strong{display:block;color:#163654;font-size:12px;overflow-wrap:anywhere}.dialog-actions{display:flex;justify-content:flex-end;margin-top:20px}.dialog-actions .primary{background:#1558a6}.dialog-actions .primary:hover{background:#0b3d91}
+@media(max-width:650px){.patient-dialog{padding:8px;align-items:flex-start}.patient-dialog-card{max-height:calc(100vh - 16px);padding:17px;border-radius:16px}.patient-details-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.patient-dialog-header h2{font-size:20px}}
+
+/* Identidad DENTAL JG basada en el logotipo proporcionado */
+.topbar{background:#1769c2;color:#fff;padding:18px 22px;border-radius:17px;box-shadow:0 8px 24px #0b3d911f}
+.topbar .eyebrow,.topbar h2{color:#fff!important}.topbar .clinic-filter-label{color:#d7e6ff}.topbar .user-chip{background:#fff;color:#1769c2}.topbar .clinic-filter{background:#fff;color:#1769c2}
+.brand-logo-login{display:block;width:min(100%,300px);height:95px;object-fit:contain;margin:0 auto 16px;background:#fff;border-radius:12px}
+.brand-logo-sidebar{display:block;width:125px;height:46px;object-fit:contain;background:#fff;border-radius:8px;padding:3px;flex:0 0 auto}
+.brand-row{gap:12px}
+.patient-row td{cursor:pointer}.patient-row:focus{outline:2px solid #1769c2;outline-offset:-2px}
+
+/* Identidad integral DENTAL JG: turquesa + azul, interfaz limpia */
+:root{--teal:#19b9b0;--blue:#1769c2;--navy:#1769c2;--ink:#101820;--line:#D9E9EF;--muted:#61778B;--primary:var(--blue)}
+button.primary,.primary{background:linear-gradient(120deg,#1769C2,#0B3D91)!important;box-shadow:0 8px 18px #1769c226;border:0!important;color:#fff!important}button.primary:hover,.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}input:focus,select:focus,textarea:focus{border-color:#19B9B0!important;box-shadow:0 0 0 3px #19B9B025!important;outline:0}.metric-icon.blue{background:#E5F0FF;color:#1769C2}.metric-icon.green{background:#DDF8F3;color:#078B83}.nav.active{background:linear-gradient(120deg,#1769C2,#0B3D91)!important;color:#fff!important}.pill,.clinic-tag{background:#DFF8F4;color:#087F78}.money{color:#087F78}.brand-intro{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:linear-gradient(145deg,#0B3D91,#1769C2 58%,#19B9B0);opacity:1;visibility:visible;transition:opacity .45s ease,visibility .45s ease}.brand-intro.done{opacity:0;visibility:hidden;pointer-events:none}.brand-intro-card{display:flex;align-items:center;flex-direction:column;color:white;text-align:center;animation:introEnter .65s cubic-bezier(.2,.8,.2,1) both}.brand-intro-card img{width:min(76vw,330px);height:auto;max-height:150px;object-fit:contain;background:transparent;border-radius:0;padding:0;box-shadow:none}.brand-intro-card span{font:800 18px Manrope,sans-serif;letter-spacing:3px;margin-top:25px}.brand-intro-card small{font-size:12px;opacity:.85;margin-top:8px}.intro-progress{width:100px;height:3px;border-radius:9px;background:#ffffff50;overflow:hidden;margin-top:28px}.intro-progress i{display:block;height:100%;width:100%;background:#fff;transform-origin:left;animation:introLoad 1.5s ease both}@keyframes introEnter{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes introLoad{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Colores de marca aplicados a todos los indicadores */
+.metric-icon.amber{background:#E5F0FF!important;color:#1769C2!important}.metric-icon.violet{background:#DFF8F4!important;color:#087F78!important}.outline:hover,.small-action:hover{border-color:#19B9B0!important;color:#0B3D91!important}
+
+
+/* DENTAL JG 10.1 · colores exactos del logotipo (turquesa + azul) y panel oscuro */
+:root{--navy:#1769c2;--navy2:#0B3D91;--teal:#19b9b0;--blue:#1769c2;--ink:#E7EEF5;--muted:#A5B4C4;--bg:#101820;--line:#2B3948;--white:#17232F;--shadow:0 14px 40px rgba(0,0,0,.28);--primary:#1769C2}
+body{background:#101820;color:#E7EEF5}
+.login-shell{background:radial-gradient(circle at 15% 15%,#173A55 0,transparent 34%),radial-gradient(circle at 90% 80%,#123C45 0,transparent 35%),#101820}
+.login-card,.metric,.table-card,.clinic-form-card,.patient-dialog-card{background:#17232F;border-color:#2B3948;color:#E7EEF5}
+.stack input,.search,.patient-form input,.patient-form select,.clinic-form-row input,.clinic-filter{background:#111C26;color:#E7EEF5;border-color:#354656}
+.stack input::placeholder,.search::placeholder{color:#91A5B8}
+.sidebar{background:linear-gradient(180deg,#123B54,#101820)}
+.topbar{background:linear-gradient(110deg,#1769C2,#0B3D91)!important}
+.welcome{background:linear-gradient(115deg,#1769C2,#0B3D91 70%,#19B9B0)!important}
+.primary,button.primary{background:linear-gradient(120deg,#1769C2,#0B3D91)!important}
+.nav.active{background:linear-gradient(120deg,#1769C2,#0B3D91)!important;box-shadow:inset 3px 0 #19B9B0}
+th{background:#1C2B38;color:#A5B4C4}td{color:#C9D5E0;border-top-color:#2B3948}td:first-child{color:#E7EEF5}
+.user-chip,.outline,.small-action{background:#17232F;color:#E7EEF5;border-color:#354656}
+.avatar{background:#183B55;color:#70DCD5}.brand-mark{background:linear-gradient(140deg,#19B9B0,#1769C2)}
+.patient-dialog{background:#07111BE8}.detail-item{background:#111C26;border-color:#2B3948}.detail-item strong{color:#E7EEF5}.detail-item small{color:#A5B4C4}.dialog-close{background:#183B55;color:#70DCD5}
+.patient-row:hover{background:#203344}.patient-name-link{color:#70DCD5}.patient-dialog-header h2,.patient-dialog-header .eyebrow{color:#19B9B0}
+.metric-icon.blue,.metric-icon.green,.metric-icon.amber,.metric-icon.violet{background:#183B55!important;color:#19B9B0!important}.pill,.clinic-tag{background:#153E43;color:#70DCD5}.money{color:#19B9B0}.brand-intro{background:linear-gradient(145deg,#0B3D91,#1769C2 58%,#19B9B0)}
+.metric-clickable{cursor:pointer;transition:transform .18s ease,border-color .18s ease}.metric-clickable:hover{transform:translateY(-3px);border-color:#19B9B0}.metric-clickable:focus-visible{outline:2px solid #19B9B0;outline-offset:3px}
+.clinic-actions{min-width:230px}.danger-action{border-color:#9B434A!important;color:#FF9A9F!important}.danger-action:hover{background:#4A2028!important;border-color:#FF777F!important}.legacy-clinic-note{display:inline-block;color:var(--muted);font-size:10px;margin-left:4px}
+@media(prefers-reduced-motion:no-preference){.primary,.nav,.metric{transition:transform .18s ease,filter .18s ease}}
+
+
+/* DENTAL JG — identidad actualizada: TURQUESA predominante */
+:root{--navy:#1769c2;--navy2:#087F78;--teal:#19b9b0;--blue:#1769c2;--primary:#19B9B0;--ink:#172B3D;--muted:#708497;--bg:#F3FAF9;--line:#D8EEEB;--shadow:0 14px 40px rgba(8,127,120,.10)}
+.primary,button.primary{background:linear-gradient(120deg,#19B9B0,#087F78)!important;color:#fff!important;box-shadow:0 8px 20px #19B9B033!important}
+.primary:hover,button.primary:hover{background:#087F78!important}
+.sidebar{background:linear-gradient(180deg,#19B9B0 0%,#087F78 100%)!important}
+.nav.active{background:#ffffff25!important;box-shadow:inset 3px 0 #fff!important}
+.welcome{background:linear-gradient(115deg,#19B9B0 0%,#0A938B 72%,#087F78 100%)!important}
+.topbar{border-color:#D8EEEB}
+.metric-icon.blue{background:#DDF8F5!important;color:#087F78!important}
+.metric-icon.green{background:#DDF8F5!important;color:#087F78!important}
+.outline:hover,.small-action:hover{border-color:#19B9B0!important;color:#087F78!important}
+.toast{background:#087F78!important}
+.brand-mark{background:linear-gradient(140deg,#19B9B0,#087F78)!important}
+
+/* DENTAL JG 10.5: logotipo de interfaz circular; iconos de instalación independientes */
+.app-round-logo{border-radius:50%!important;object-fit:contain!important;background:#e9f8f7!important;border:2px solid #c4e9e6!important;padding:4px!important;box-shadow:0 4px 14px #102a4318}
+
+/* Logo original DENTAL JG: transparente, sin tarjeta ni recorte redondo */
+.brand img{background:transparent!important;border-radius:0!important;padding:0!important;object-fit:contain!important;width:64px!important;height:50px!important}.login-card img{background:transparent!important;border-radius:0!important;object-fit:contain!important;width:170px!important;height:100px!important}
+
+/* Marca original en encabezados: sin fondo y sin recorte circular */
+.app-round-logo,.brand-logo-login,.brand-logo-sidebar{border-radius:0!important;background:transparent!important;padding:0!important;object-fit:contain!important}
+
+/* DENTAL JG 10.5.6 — recibos en panel navegador */
+.receipt-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;background:var(--card,#fff);padding:18px;border:1px solid var(--line);border-radius:16px;margin-bottom:18px}.receipt-tools label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--ink)}.receipt-tools input,.receipt-tools select{width:100%;min-width:0;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#172B3D;font:inherit}.receipt-actions{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.panel-receipt-preview{max-width:780px;margin:0 auto 18px}.panel-receipt{background:#fff;color:#1d2935;border:1px solid #cbd5dc;padding:22px 24px;font:12px/1.35 Arial,sans-serif;box-sizing:border-box;position:relative;overflow-wrap:anywhere;min-height:300px}.panel-receipt h3{font-size:18px;line-height:1.2;margin:0 0 5px}.panel-receipt .pr-head{display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:2px solid #15978f;padding-bottom:12px;margin-bottom:12px}.panel-receipt .pr-brand{font-weight:900;letter-spacing:.8px;color:#087f78;font-size:18px}.panel-receipt .pr-row{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:8px 0}.panel-receipt .pr-field{border-bottom:1px solid #cbd5dc;min-height:28px;padding:5px 2px;overflow-wrap:anywhere}.panel-receipt .pr-label{font-size:9px;letter-spacing:.3px;color:#526777;text-transform:uppercase;font-weight:700;display:block;margin-bottom:3px}.panel-receipt .pr-amount{margin:12px 0;padding:10px;border:1px solid #15978f;font-size:16px;font-weight:800;text-align:right}.panel-receipt .pr-footer{text-align:center;font-size:11px;font-weight:800;margin-top:18px;padding-top:8px;border-top:1px solid #cbd5dc;text-transform:lowercase}.panel-receipt.receipt-design-2{border-top:9px solid #19b9b0}.panel-receipt.receipt-design-3{border-top:7px solid #1769c2}.panel-receipt.receipt-design-4{border:0;border-top:1px solid #555;border-bottom:1px solid #555}.panel-receipt.receipt-design-5 .pr-head{background:#e7f7f5;margin:-22px -24px 12px;padding:18px 24px}.panel-receipt.receipt-design-6{border:3px double #15978f}.panel-receipt.receipt-design-7{background:#f5f8fa;border-top:8px solid #243746}.panel-receipt.receipt-design-7 .pr-brand{color:#243746}.panel-receipt.receipt-design-8{border:1px solid #15978f;outline:1px solid #15978f;outline-offset:-6px}.panel-receipt.receipt-design-9{padding:16px 20px;border-left:8px solid #087f78}.panel-receipt.receipt-design-10 .pr-head{border-bottom:4px double #087f78}.panel-receipt.receipt-design-10 .pr-amount{background:#e7f7f5}@media print{body *{visibility:hidden!important}#panelReceiptPreviewArea,#panelReceiptPreviewArea *{visibility:visible!important}.panel-receipt-preview{max-width:none;margin:0}.panel-receipt{break-inside:avoid;min-height:0;margin:0;padding:10mm 8mm;font-size:9pt}.panel-receipt h3{font-size:13pt}.panel-print-sheet{display:grid;grid-template-rows:repeat(4,1fr);height:277mm;gap:3mm}.panel-print-sheet .panel-receipt{height:calc((277mm - 9mm)/4);overflow:hidden} @page{size:A4 portrait;margin:10mm}}
+
+/* DENTAL JG logo repair: original transparent source, proportional sizing, no circle/frame. */
+.brand-logo-login{display:block!important;width:min(100%,300px)!important;height:auto!important;max-height:none!important;aspect-ratio:1316/417!important;object-fit:contain!important;object-position:center!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important;margin:0 auto 16px!important;flex:0 1 auto!important}
+.brand-logo-sidebar{display:block!important;width:145px!important;height:auto!important;aspect-ratio:1316/417!important;object-fit:contain!important;object-position:center!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important;flex:0 1 145px!important}
+.brand-intro-card img{width:min(76vw,420px)!important;height:auto!important;max-height:none!important;aspect-ratio:1316/417!important;object-fit:contain!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
+.brand-row{align-items:center!important}
+@media(max-width:700px){.brand-logo-sidebar{width:125px!important;flex-basis:125px!important}.brand-logo-login{width:min(100%,300px)!important}}
+
+/* DENTAL JG 10.8: el alta de clientes está centralizada en registro-web. */
+.patient-form-card{display:none!important}
+
+
+/* 10.8.101: logo transparente e iconos superiores más visibles */
+.brand-logo-login,.brand-logo-sidebar,.brand-intro-card img{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;object-fit:contain!important}
+.nav{font-size:28px!important;min-height:52px!important}.nav span{font-size:14px!important}.metric-icon{width:64px!important;height:64px!important;font-size:30px!important}.welcome-icon{font-size:66px!important}
+#usersPage .clinic-form-row{align-items:end;flex-wrap:wrap}#usersPage .clinic-form-row input,#usersPage .clinic-form-row select{flex:1 1 180px}#usersPage .clinic-form label{margin-top:12px}#usersPage .table-wrap{overflow-x:auto}#usersPage .small-action{white-space:nowrap}
+@media(max-width:700px){.nav{font-size:25px!important;min-height:48px!important}.nav span{font-size:12px!important}.metric-icon{width:54px!important;height:54px!important;font-size:27px!important}.welcome-icon{font-size:48px!important}}
+
+/* Corrección móvil: controles de Usuarios/Roles no deben crecer a la altura de la pantalla. */
+#usersPage .clinic-form-row{display:flex;flex-direction:column;align-items:stretch;gap:12px;width:100%;}
+#usersPage .clinic-form-row input,#usersPage .clinic-form-row select{display:block;width:100%;max-width:100%;min-width:0;flex:0 0 auto;box-sizing:border-box;height:52px;min-height:52px;padding:12px 14px;font:500 16px/1.25 'DM Sans',sans-serif;border:1px solid #354656;border-radius:12px;background:#111c26;color:#e7eef5;appearance:auto;-webkit-appearance:menulist;}
+#usersPage .clinic-form-row select{height:52px;min-height:52px;}
+#usersPage .clinic-form-row .primary{width:100%;min-height:52px;white-space:normal;}
+#usersPage .clinic-form-card{overflow:hidden;}
+#usersPage .clinic-form-row input:focus,#usersPage .clinic-form-row select:focus{outline:2px solid #19b9b0;outline-offset:1px;}
+#usersPage .form-hint{overflow-wrap:anywhere;}
+
+.app-version{font:500 10px/1.4 system-ui,sans-serif;letter-spacing:.25px;text-align:center;color:#8ca1b3;opacity:.72;padding:8px 12px 12px;margin-top:8px}
+
+/* Corrección específica: formulario Usuarios/Roles en Android WebView */
+#usersPage #createUserForm, #usersPage #createUserForm .clinic-form-row { display:flex !important; flex-direction:column !important; align-items:stretch !important; gap:12px !important; width:100% !important; min-width:0 !important; }
+#usersPage #createUserForm input, #usersPage #createUserForm select { display:block !important; box-sizing:border-box !important; width:100% !important; max-width:100% !important; min-width:0 !important; height:52px !important; min-height:52px !important; max-height:52px !important; flex:none !important; padding:12px 42px 12px 14px !important; font-size:16px !important; line-height:1.25 !important; border-radius:12px !important; }
+#usersPage #createUserForm select { appearance:none !important; -webkit-appearance:none !important; background-color:#111c26 !important; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2319b9b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important; background-repeat:no-repeat !important; background-position:right 14px center !important; color:#e7eef5 !important; }
+#usersPage #createUserForm .primary { width:100% !important; min-height:52px !important; height:auto !important; flex:none !important; }
+#usersPage .clinic-form-card { box-sizing:border-box; min-width:0; }
+
+
+/* FIX REAL: formulario de cuentas y roles en Android WebView */
+#usersPage #createUserForm{display:block!important;width:100%!important;min-width:0!important}
+#usersPage #createUserForm .clinic-form-row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important;width:100%!important;min-width:0!important}
+#usersPage #createUserForm input,#usersPage #createUserForm select{display:block!important;position:relative!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:52px!important;min-height:52px!important;max-height:52px!important;flex:none!important;appearance:none!important;-webkit-appearance:none!important;font-size:16px!important;line-height:1.25!important;padding:12px 42px 12px 14px!important;overflow:hidden!important}
+#usersPage #createUserForm select{background-color:#111c26!important;color:#e7eef5!important;border:1px solid #354656!important;border-radius:12px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2319b9b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 14px center!important}
+#usersPage #createUserForm .primary{display:block!important;width:100%!important;height:auto!important;min-height:52px!important}
+#usersPage #userAdminRows .empty{white-space:normal;overflow-wrap:anywhere}
+
+
+/* Corrección de acceso a Registro de roles (Administración móvil). */
+.nav-role-entry{background:#0b3d91!important;color:#fff!important;border:1px solid #ffffff70!important;font-weight:800!important}
+.nav-role-entry span{font-weight:800!important}
+.nav-role-entry:hover,.nav-role-entry.active{background:#075e67!important;color:#fff!important;box-shadow:inset 4px 0 #fff!important}
+.role-access-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 22px;margin:0 0 25px;border:1px solid #8bdad4;border-left:6px solid #19b9b0;border-radius:16px;background:linear-gradient(105deg,#e7fbf8,#f8fcff);color:#172b4d}
+.role-access-card h3{margin:0 0 6px;font:800 18px Manrope,sans-serif}
+.role-access-card p{margin:0;color:#4b6575;font-size:12px;line-height:1.5}
+.role-access-card .role-access-kicker{margin:0 0 5px;color:#087f78;font-size:10px;font-weight:900;letter-spacing:1.2px}
+.role-access-card .primary{flex:0 0 auto;white-space:normal}
+@media(max-width:700px){.sidebar nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}.nav{width:100%!important;min-width:0!important;justify-content:flex-start!important;padding:10px 9px!important;gap:8px!important}.nav span{font-size:12px!important;line-height:1.25!important;text-align:left!important}.nav[data-page="users"]{grid-column:1/-1!important;justify-content:center!important}.role-access-card{align-items:stretch;flex-direction:column;gap:13px;padding:17px}.role-access-card .primary{width:100%;min-height:48px}}
+
+
+/* Registro de roles: entradas táctiles y teclado Android accesibles en WebView. */
+#usersPage #createUserForm input,
+#usersPage #createUserForm select {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  touch-action: manipulation;
+  position: relative;
+  z-index: 2;
+}
+#usersPage #createUserForm input {
+  caret-color: #20c9bd !important;
+  -webkit-text-fill-color: #e7eef5;
+}
+#usersPage #createUserForm input:focus,
+#usersPage #createUserForm select:focus {
+  outline: 2px solid #20c9bd !important;
+  outline-offset: 1px;
+}
+
+
+/* Corrección definitiva del formulario de cuenta en Android: tema oscuro y turquesa. */
+#ownAccountForm input,
+#ownAccountForm select,
+#ownAccountForm textarea {
+  display:block !important; box-sizing:border-box !important; width:100% !important; max-width:100% !important; min-width:0 !important;
+  min-height:52px !important; padding:12px 14px !important; border:1px solid #354656 !important; border-radius:12px !important;
+  background:#111c26 !important; color:#e7eef5 !important; font:500 16px/1.35 'DM Sans',sans-serif !important;
+  color-scheme:dark; pointer-events:auto !important; user-select:text !important; -webkit-user-select:text !important;
+  touch-action:manipulation; caret-color:#20c9bd !important;
+}
+#ownAccountForm input[readonly] { opacity:.82; }
+#ownAccountForm input::placeholder { color:#91a5b8 !important; opacity:1; }
+#ownAccountForm input:focus { outline:2px solid #19b9b0 !important; outline-offset:1px; border-color:#19b9b0 !important; }
+#ownAccountForm label { display:block; width:100%; margin:12px 0 7px; color:#dce6ef; }
+#ownAccountForm button { max-width:100%; white-space:normal; }
+/* Logotipo y marca sin placa blanca ni fondo añadido. */
+.brand-logo-login,.brand-logo-sidebar,.brand-intro-card img,.app-round-logo { background:transparent !important; border:0 !important; box-shadow:none !important; }
