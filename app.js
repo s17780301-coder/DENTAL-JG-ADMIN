@@ -9,6 +9,19 @@ const date=s=>{if(!s)return "—";const d=new Date(s);return Number.isNaN(d.getT
 function note(s){$("notice").textContent=s;$("notice").classList.remove("hidden")}
 function fail(err,where){console.error(where,err);note(where+": "+(err?.message||"Revisa permisos y esquema de Supabase."))}
 function showLogin(msg=""){$("loginMsg").textContent=msg}
+function ensureClient(){
+ if(!ready)throw new Error("Falta configurar config.js con URL y clave pública de Supabase.");
+ if(!db)ensureClient();
+ return db;
+}
+function authMode(mode){
+ $("loginForm").classList.toggle("hidden",mode!=="login");
+ $("recoveryForm").classList.toggle("hidden",mode!=="recovery");
+ $("resetPasswordForm").classList.toggle("hidden",mode!=="reset");
+ $("loginTitle").textContent=({login:"Iniciar sesión",recovery:"Recuperar cuenta",reset:"Restablecer contraseña"})[mode]||"Iniciar sesión";
+ $("selectedAppBadge").classList.toggle("hidden",mode==="reset");
+ $("backToApps").classList.toggle("hidden",mode==="reset");
+}
 const roleMap={
  admin:"admin",administrator:"admin",administrador:"admin",owner:"admin",
  cobranza:"cobranza",collection:"cobranza",collector:"cobranza",
@@ -85,23 +98,84 @@ async function loadPortfolios(){
 }
 let selectedApp="";
 const appLabels={patients:"Registro de clientes",collection:"Cobranza",admin:"Administración"};
+if(ready){
+ ensureClient();
+ db.auth.onAuthStateChange((event)=>{
+  if(event==="PASSWORD_RECOVERY"){
+   selectedApp="";
+   $("appPicker").classList.add("hidden");
+   $("login").classList.remove("hidden");
+   authMode("reset");
+   $("resetPasswordMsg").textContent="El enlace fue validado. Escribe y confirma tu nueva contraseña.";
+  }
+ });
+}
 document.querySelectorAll("[data-select-app]").forEach(button=>button.addEventListener("click",()=>{
  selectedApp=button.dataset.selectApp;
  $("selectedAppLabel").textContent=appLabels[selectedApp]||"Aplicación";
  $("appPicker").classList.add("hidden");
  $("login").classList.remove("hidden");
- $("loginMsg").textContent="";
+ $("portalNotice").classList.add("hidden");$("portalNotice").textContent="";
+ $("loginForm").reset();$("recoveryForm").reset();$("resetPasswordForm").reset();
+ authMode("login");$("loginMsg").textContent="";$("recoveryMsg").textContent="";
  $("email").focus();
 }));
 $("backToApps").addEventListener("click",()=>{
  $("login").classList.add("hidden");
  $("appPicker").classList.remove("hidden");
- $("loginForm").reset();
+ selectedApp="";
+ $("loginForm").reset();$("recoveryForm").reset();$("resetPasswordForm").reset();
+ authMode("login");$("loginMsg").textContent="";$("recoveryMsg").textContent="";
+});
+$("forgotPassword").addEventListener("click",()=>{
+ $("recoveryEmail").value=$("email").value.trim();
+ $("recoveryMsg").textContent="";
+ authMode("recovery");
+ $("recoveryEmail").focus();
+});
+$("cancelRecovery").addEventListener("click",()=>{
+ $("email").value=$("recoveryEmail").value.trim();
  $("loginMsg").textContent="";
+ authMode("login");
+ $("email").focus();
+});
+$("recoveryForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(!ready){$("recoveryMsg").textContent="La conexión no está configurada. No se envió ningún enlace.";return}
+ const button=$("sendRecovery");button.disabled=true;
+ $("recoveryMsg").textContent="Solicitando enlace de recuperación…";
+ try{
+  ensureClient();
+  const redirectTo=window.location.origin+window.location.pathname;
+  const {error}=await db.auth.resetPasswordForEmail($("recoveryEmail").value.trim(),{redirectTo});
+  if(error)throw error;
+  $("recoveryMsg").textContent="Solicitud enviada. Revisa tu correo y abre el enlace recibido para definir una nueva contraseña. No se inició sesión.";
+ }catch(err){$("recoveryMsg").textContent="No se pudo solicitar la recuperación: "+(err.message||"verifica la URL de redirección autorizada en Supabase.");}
+ finally{button.disabled=false}
+});
+$("resetPasswordForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const password=$("newPassword").value,confirmation=$("confirmNewPassword").value;
+ if(password.length<8){$("resetPasswordMsg").textContent="La contraseña debe tener al menos 8 caracteres.";return}
+ if(password!==confirmation){$("resetPasswordMsg").textContent="Las contraseñas no coinciden.";return}
+ const button=$("saveNewPassword");button.disabled=true;
+ $("resetPasswordMsg").textContent="Actualizando contraseña…";
+ try{
+  ensureClient();
+  const {error}=await db.auth.updateUser({password});
+  if(error)throw error;
+  await db.auth.signOut().catch(()=>{});
+  $("resetPasswordForm").reset();$("loginForm").reset();$("recoveryForm").reset();
+  selectedApp="";authMode("login");
+  $("login").classList.add("hidden");$("appPicker").classList.remove("hidden");
+  $("portalNotice").textContent="La contraseña se actualizó. Selecciona un módulo e inicia sesión con la nueva contraseña.";
+  $("portalNotice").classList.remove("hidden");
+ }catch(err){$("resetPasswordMsg").textContent="No se pudo actualizar la contraseña: "+(err.message||"vuelve a solicitar el enlace.");}
+ finally{button.disabled=false}
 });
 $("loginForm").addEventListener("submit",async e=>{
  e.preventDefault();if(!ready){showLogin("Falta configurar config.js con URL y clave pública de Supabase.");return}
- showLogin("Validando cuenta y permisos…");$("loginForm").querySelector("button").disabled=true;
+ showLogin("Validando correo, contraseña y permisos…");$("loginSubmit").disabled=true;
  try{
   db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
   const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
@@ -114,7 +188,7 @@ $("loginForm").addEventListener("submit",async e=>{
   if(!permitted){await db.auth.signOut();$("app").classList.add("hidden");$("login").classList.remove("hidden");throw new Error("Tu cuenta no tiene permiso para entrar a "+(appLabels[selectedApp]||"esta aplicación")+".");}
   view(selectedApp);
  }catch(err){showLogin(err.message||"Acceso denegado.");if(db)await db.auth.signOut().catch(()=>{});}
- finally{$("loginForm").querySelector("button").disabled=false}
+ finally{$("loginSubmit").disabled=false}
 });
 $("logout").addEventListener("click",async()=>{if(db)await db.auth.signOut();location.reload()});
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>view(b.dataset.view)));
