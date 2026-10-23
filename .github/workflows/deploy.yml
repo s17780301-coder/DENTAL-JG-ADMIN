@@ -26,6 +26,44 @@ jobs:
           set -euo pipefail
           mkdir -p public extracted
 
+          # Diagnóstico temporal del ZIP maestro; no se usa para publicar.
+          if [[ -s "00_DENTAL_JG_PANEL_WEB_MAESTRO_1_0_6_ACTUALIZADO.zip" ]]; then
+            mkdir -p zip-inspect
+            unzip -oq "00_DENTAL_JG_PANEL_WEB_MAESTRO_1_0_6_ACTUALIZADO.zip" -d zip-inspect
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path("zip-inspect")
+          print("ZIP_DIAG_FILES_BEGIN")
+          for p in sorted(root.rglob("*")):
+              if p.is_file() and (p.name in {"index.html","app.js","users.js","styles.css"} or "administrar-usuarios" in str(p)):
+                  print(f"ZIPFILE {p.relative_to(root)} SIZE {p.stat().st_size}")
+          print("ZIP_DIAG_FILES_END")
+          pages = [p for p in root.rglob("index.html") if p.is_file()]
+          for p in pages:
+              html = p.read_text(encoding="utf-8", errors="replace")
+              print(f"ZIP_DIAG_PAGE {p.relative_to(root)} SIZE {len(html)}")
+              print("ZIP_DIAG_HEAD_BEGIN")
+              print(html[:1400])
+              print("ZIP_DIAG_HEAD_END")
+              for section in ("patients","collection","admin"):
+                  start = html.find(f'<section id="{section}"')
+                  if start < 0: continue
+                  end = html.find("</section>", start)
+                  end = html.find("</section>", end+10) if end >= 0 and section in {"collection"} else end
+                  end = html.find("</section>", end+10) if end >= 0 and section in {"collection"} else end
+                  print(f"ZIP_DIAG_SECTION_{section.upper()}_BEGIN")
+                  print(html[start:(end+10 if end >= 0 else min(len(html), start+7000))][:7000])
+                  print(f"ZIP_DIAG_SECTION_{section.upper()}_END")
+          for p in root.rglob("users.js"):
+              if p.is_file():
+                  txt=p.read_text(encoding="utf-8", errors="replace")
+                  print("ZIP_DIAG_USERS_JS_BEGIN")
+                  print(txt[:10000])
+                  print("ZIP_DIAG_USERS_JS_END")
+          PY
+          fi
+
           # Preferir los archivos ya desplegables en la raíz del repositorio.
           required=(index.html styles.css app.js config.js logo-dental-jg.svg)
           root_ready=true
