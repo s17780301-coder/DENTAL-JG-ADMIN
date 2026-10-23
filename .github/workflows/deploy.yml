@@ -81,7 +81,7 @@ jobs:
                 page = modules / name / "index.html"
                 html = page.read_text(encoding="utf-8")
                 if "data-dental-back" not in html:
-                    html, count = re.subn(r"<body(?:\\s[^>]*)?>", lambda m: m.group(0) + return_bar, html, count=1, flags=re.I)
+                    html, count = re.subn(r"<body(?:\s[^>]*)?>", lambda m: m.group(0) + return_bar, html, count=1, flags=re.I)
                     if count != 1:
                         raise SystemExit(f"No se pudo insertar el regreso al portal en {name}.")
                     page.write_text(html, encoding="utf-8")
@@ -111,7 +111,7 @@ h1,.metrics strong{color:#087f78}
                 css = modules / name / "styles.css"
                 current = css.read_text(encoding="utf-8")
                 if "DENTAL JG shared turquoise skin" not in current:
-                    css.write_text(current.rstrip() + "\\n\\n" + override.strip() + "\\n", encoding="utf-8")
+                    css.write_text(current.rstrip() + "\n\n" + override.strip() + "\n", encoding="utf-8")
             PY
             # Recuperar el PNG original desde el ZIP maestro si está disponible.
             if [[ ! -s public/logo-dental-jg.png ]]; then
