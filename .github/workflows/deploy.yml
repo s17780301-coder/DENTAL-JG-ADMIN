@@ -113,7 +113,7 @@ jobs:
           source = admin_js.read_text(encoding="utf-8")
           if "async function restoreAdminSession(" not in source:
               start = source.find("if(configured){try{client=window.supabase.createClient")
-              end = source.find("\\n\\n  // Panel navegador", start) if start >= 0 else -1
+              end = source.find("\n\n  // Panel navegador", start) if start >= 0 else -1
               if start < 0 or end < 0:
                   raise SystemExit("No se reconoció la restauración de sesión de Administración; se cancela la publicación.")
               replacement = r"""
@@ -159,14 +159,14 @@ jobs:
               html_file = folder / "index.html"
               html = html_file.read_text(encoding="utf-8")
               for asset in ("styles.css", "app.js", "config.js", "service-worker.js", "logo-dental-jg.png", "logo-dental-jg.svg", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon.svg"):
-                  pattern = re.escape(asset) + r"(?:\\?v=[^\\\"'\\s>]*)?"
+                  pattern = re.escape(asset) + r"(?:\?v=[^\"'\s>]*)?"
                   html = re.sub(pattern, asset + "?v=" + build_id, html)
               html_file.write_text(html, encoding="utf-8")
 
               sw_file = folder / "service-worker.js"
               if sw_file.is_file():
                   sw = sw_file.read_text(encoding="utf-8")
-                  sw, count = re.subn(r"(const\\s+(?:CACHE|CACHE_NAME)\\s*=\\s*)['\\\"][^'\\\"]+['\\\"]", lambda m: m.group(1) + "'dental-jg-" + name + "-" + build_id + "'", sw, count=1)
+                  sw, count = re.subn(r"(const\s+(?:CACHE|CACHE_NAME)\s*=\s*)['\"][^'\"]+['\"]", lambda m: m.group(1) + "'dental-jg-" + name + "-" + build_id + "'", sw, count=1)
                   if count == 0:
                       raise SystemExit(f"No se reconoció el nombre de caché del service worker de {name}.")
                   sw_file.write_text(sw, encoding="utf-8")
@@ -1082,7 +1082,7 @@ jobs:
           html_path = Path("public/index.html")
           html = html_path.read_text(encoding="utf-8")
           version = "build-" + os.environ.get("GITHUB_SHA", "local")[:10]
-          html = re.sub(r'logo-dental-jg\\.png(?:\\?v=[^"\\']*)?', 'logo-dental-jg.png?v=' + version, html)
+          html = re.sub(r'logo-dental-jg\.png(?:\?v=[^"\']*)?', 'logo-dental-jg.png?v=' + version, html)
           html = re.sub(r'<div id="dental-jg-build-version"[^>]*>.*?</div>', '', html, flags=re.I|re.S)
           html = re.sub(r'<meta name="dental-jg-version"[^>]*>', '', html, flags=re.I)
           html = re.sub(r'<title>.*?</title>', '<title>DENTAL JG | Panel central</title>', html, count=1, flags=re.I|re.S)
