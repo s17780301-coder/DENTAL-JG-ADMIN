@@ -28,10 +28,16 @@ const roleMap={
  registro:"registro",registrador:"registro",registration:"registro",registro_clientes:"registro"
 };
 async function checkRole(){
- const {data,error}=await db.from("app_user_roles").select("*").eq("user_id",user.id).maybeSingle();
+ // Una cuenta puede tener varios roles. Leerlos como lista evita el error PGRST116 de maybeSingle().
+ const {data,error}=await db.from("app_user_roles").select("role,role_name,app_role").eq("user_id",user.id);
  if(error)throw new Error("No se pudieron verificar los permisos en app_user_roles: "+error.message);
- const raw=String(data?.role||data?.role_name||data?.app_role||"").toLowerCase().trim();
- role=roleMap[raw]||"";
+ const rows=Array.isArray(data)?data:[];
+ const roles=rows.map(row=>{
+  const raw=String(row?.role||row?.role_name||row?.app_role||"").toLowerCase().trim();
+  return roleMap[raw]||"";
+ }).filter(Boolean);
+ // Administración tiene prioridad si la cuenta también tiene Registro u otro rol.
+ role=roles.includes("admin")?"admin":roles.includes("cobranza")?"cobranza":roles.includes("registro")?"registro":"";
  if(!role)throw new Error("La cuenta no tiene un rol autorizado (Administración, Cobranza o Registro).");
 }
 function allowed(viewName){return role==="admin"||(role==="cobranza"&&viewName==="collection")||(role==="registro"&&viewName==="patients")}
