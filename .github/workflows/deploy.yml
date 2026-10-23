@@ -1315,11 +1315,14 @@ jobs:
           grep -Fq "register_dental_jg_patient" public/modules/registro/app.js
           grep -Fq "delete_archived_patient" public/modules/cobranza/app.js
           grep -Fq "delete_patient_permanently" public/modules/administracion/app.js
-          if grep -Eq "from\\(['\"]patients['\"]\\)[[:space:]]*\\.(insert|upsert)" public/modules/administracion/app.js; then
-            echo "::error::Administración contiene una ruta de alta de pacientes; el único módulo autorizado es Registro."
-            exit 1
-          fi
-          echo "OK: altas por RPC de Registro, eliminación histórica en Cobranza, archivo en Administración y sin INSERT de pacientes desde Administración."
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          source = Path("public/modules/administracion/app.js").read_text(encoding="utf-8")
+          if re.search(r"""from\(['"]patients['"]\)\s*\.(insert|upsert)""", source):
+              raise SystemExit("Administración contiene una ruta de alta de pacientes; el único módulo autorizado es Registro.")
+          PY
+          echo "OK: altas por RPC de Registro, eliminación histórica en Cobranza y eliminación protegida en Administración."
 
       - name: Instalar CLI de Supabase
         if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && hashFiles('supabase/functions/administrar-usuarios/index.ts') != '' }}
