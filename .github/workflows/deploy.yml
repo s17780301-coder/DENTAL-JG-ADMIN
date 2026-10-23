@@ -145,7 +145,7 @@ jobs:
           start = source.find("const allowedRoles = new Set(")
           marker = "return jsonResponse(req, { roles });"
           end = source.find(marker, start) if start >= 0 else -1
-          roles_new = "\\n".join([
+          roles_new = "\n".join([
               'const roleAliases: Record<string, string> = { admin: "admin", administrator: "admin", administrador: "admin", administracion: "admin", "administración": "admin", owner: "admin", cobranza: "cobranza", collection: "cobranza", collector: "cobranza", registro: "registro", registrador: "registro", registro_clientes: "registro", registro_de_clientes: "registro", "registro de clientes": "registro", registration: "registro", gestor: "gestor" };',
               'const roles = [...new Set((roleRows ?? []).map((row: { role?: string }) => roleAliases[String(row.role ?? "").trim().toLowerCase()] ?? "").filter((role: string) => Boolean(role)))];',
               "return jsonResponse(req, { roles });",
