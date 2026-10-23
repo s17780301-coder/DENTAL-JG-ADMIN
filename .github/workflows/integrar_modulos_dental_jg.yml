@@ -1,0 +1,113 @@
+name: Integrar módulos reales DENTAL JG
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: integrar-modulos-dental-jg
+  cancel-in-progress: false
+
+jobs:
+  integrar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio del panel
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Integrar las aplicaciones web originales
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$RUNNER_TEMP/dental-jg-apps.zip"
+          ROOT="$RUNNER_TEMP/dental-jg-src"
+          curl -fL --retry 3 "https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/DENTAL_JG_APLICACIONES_REPARACION_ACCESO_1_0_7.zip" -o "$SRC"
+          mkdir -p "$ROOT"
+          unzip -q "$SRC" -d "$ROOT"
+
+          copy_app() {
+            local source="$1" dest="$2"
+            mkdir -p "$dest"
+            for file in index.html app.js styles.css config.js logo-dental-jg.svg logo-dental-jg-round.svg icon.svg manifest.webmanifest service-worker.js logo-dental-jg.png logo-dental-jg-round.png icon-192.png icon-512.png receipt-template.jpg; do
+              if [[ -f "$source/$file" ]]; then cp "$source/$file" "$dest/$file"; fi
+            done
+          }
+
+          copy_app "$ROOT/djg/registro-app/src/main/assets/registro-web" "modules/registro"
+          copy_app "$ROOT/djg/cobranza-app/src/main/assets" "modules/cobranza"
+          copy_app "$ROOT/djg/panel-apk/src/main/assets" "modules/administracion"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace('src="./logo-dental-jg.png?v=10.8.72"', 'src="./logo-dental-jg.svg?v=10.8.73"')
+          s = s.replace('onclick="location.href=\'./modules/registro/index.html\'"', 'onclick="openDentalModule(\'registro\')"')
+          s = s.replace('onclick="location.href=\'./modules/cobranza/index.html\'"', 'onclick="openDentalModule(\'cobranza\')"')
+          s = s.replace('onclick="location.href=\'./modules/administracion/index.html\'"', 'onclick="openDentalModule(\'administracion\')"')
+          # Insert a full-screen module viewport while retaining the existing portal design.
+          marker = '<section id="login"'
+          stage = '''
+          <section id="moduleStage" class="hidden" style="position:fixed;inset:0;z-index:9999;background:#f4fbfa;display:none;flex-direction:column;">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#073b3a;color:#fff;box-shadow:0 2px 12px #0002;">
+              <button id="moduleBack" type="button" style="border:1px solid #8edbd4;background:transparent;color:#fff;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer;">← Volver al panel</button>
+              <strong id="moduleHeading" style="font-size:14px;">DENTAL JG</strong>
+            </div>
+            <iframe id="moduleFrame" title="Módulo DENTAL JG" style="display:block;border:0;width:100%;height:calc(100% - 52px);background:#fff;flex:1;" allow="clipboard-read; clipboard-write"></iframe>
+          </section>
+          <script>
+          (() => {
+            const stage = document.getElementById('moduleStage');
+            const portal = document.getElementById('appPicker');
+            const frame = document.getElementById('moduleFrame');
+            const heading = document.getElementById('moduleHeading');
+            const labels = {registro:'Registro de clientes',cobranza:'Cobranza',administracion:'Administración'};
+            window.openDentalModule = function (name) {
+              if (!labels[name]) return;
+              heading.textContent = labels[name];
+              frame.src = './modules/' + name + '/index.html';
+              portal.style.display = 'none';
+              stage.classList.remove('hidden');
+              stage.style.display = 'flex';
+              document.body.style.overflow = 'hidden';
+            };
+            document.getElementById('moduleBack').addEventListener('click', () => {
+              frame.src = 'about:blank';
+              stage.style.display = 'none';
+              stage.classList.add('hidden');
+              portal.style.display = '';
+              document.body.style.overflow = '';
+            });
+          })();
+          </script>
+          '''
+          if 'id="moduleStage"' not in s:
+            if marker not in s: raise SystemExit('No se encontró la sección de acceso para insertar el visor de módulos.')
+            s = s.replace(marker, stage + '\n' + marker, 1)
+          p.write_text(s, encoding="utf-8")
+          PY
+
+          # No tocar el aspecto de las apps: se publican sus archivos web originales.
+          test -s modules/registro/index.html
+          test -s modules/cobranza/index.html
+          test -s modules/administracion/index.html
+          echo "Módulos integrados: Registro, Cobranza y Administración."
+
+      - name: Guardar integración en GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html modules/
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "No hay cambios para guardar."
+          else
+            git commit -m "Integrar módulos web originales de DENTAL JG"
+            git push
+          fi
