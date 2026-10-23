@@ -11,7 +11,7 @@ function fail(err,where){console.error(where,err);note(where+": "+(err?.message|
 function showLogin(msg=""){$("loginMsg").textContent=msg}
 function ensureClient(){
  if(!ready)throw new Error("Falta configurar config.js con URL y clave pública de Supabase.");
- if(!db)ensureClient();
+ if(!db)db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
  return db;
 }
 function authMode(mode){
@@ -28,17 +28,19 @@ const roleMap={
  registro:"registro",registrador:"registro",registration:"registro",registro_clientes:"registro"
 };
 async function checkRole(){
- // Una cuenta puede tener varios roles. Leerlos como lista evita el error PGRST116 de maybeSingle().
- const {data,error}=await db.from("app_user_roles").select("role,role_name,app_role").eq("user_id",user.id);
- if(error)throw new Error("No se pudieron verificar los permisos en app_user_roles: "+error.message);
- const rows=Array.isArray(data)?data:[];
- const roles=rows.map(row=>{
-  const raw=String(row?.role||row?.role_name||row?.app_role||"").toLowerCase().trim();
+ // La Edge Function valida el usuario y consulta sus roles en el servidor.
+ const {data,error}=await db.functions.invoke("administrar-usuarios",{body:{action:"my_roles"}});
+ if(error)throw new Error("No se pudieron verificar los permisos mediante administrar-usuarios: "+(error.message||"error de la función"));
+ if(data?.error)throw new Error("No se pudieron verificar los permisos: "+data.error);
+ const source=Array.isArray(data)?data:(Array.isArray(data?.roles)?data.roles:(Array.isArray(data?.data)?data.data:[]));
+ const roles=source.map(row=>{
+  const raw=String(typeof row==="string"?row:(row?.role||row?.role_name||row?.app_role||row?.name||"")).toLowerCase().trim();
   return roleMap[raw]||"";
  }).filter(Boolean);
- // Administración tiene prioridad si la cuenta también tiene Registro u otro rol.
+ const direct=String(data?.role||data?.role_name||data?.app_role||"").toLowerCase().trim();
+ if(roleMap[direct])roles.push(roleMap[direct]);
  role=roles.includes("admin")?"admin":roles.includes("cobranza")?"cobranza":roles.includes("registro")?"registro":"";
- if(!role)throw new Error("La cuenta no tiene un rol autorizado (Administración, Cobranza o Registro).");
+ if(!role)throw new Error("La función no devolvió un rol autorizado para esta cuenta. Revisa app_user_roles en Supabase.");
 }
 function allowed(viewName){return role==="admin"||(role==="cobranza"&&viewName==="collection")||(role==="registro"&&viewName==="patients")}
 function setNavigation(){
