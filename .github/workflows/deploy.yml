@@ -142,37 +142,18 @@ jobs:
           if old in source:
               source = source.replace(old, new, 1)
 
-          roles_old = """const allowedRoles = new Set(["admin", "cobranza", "registro", "gestor"]);
-          const roles = [...new Set((roleRows ?? [])
-            .map((row: { role?: string }) => String(row.role ?? "").trim().toLowerCase())
-            .filter((role: string) => allowedRoles.has(role)))];
-          return jsonResponse(req, { roles });"""
-          roles_new = """const roleAliases: Record<string, string> = {
-            admin: "admin",
-            administrator: "admin",
-            administrador: "admin",
-            administracion: "admin",
-            "administración": "admin",
-            owner: "admin",
-            cobranza: "cobranza",
-            collection: "cobranza",
-            collector: "cobranza",
-            registro: "registro",
-            registrador: "registro",
-            registro_clientes: "registro",
-            registro_de_clientes: "registro",
-            "registro de clientes": "registro",
-            registration: "registro",
-            gestor: "gestor",
-          };
-          const roles = [...new Set((roleRows ?? [])
-            .map((row: { role?: string }) => roleAliases[String(row.role ?? "").trim().toLowerCase()] ?? "")
-            .filter((role: string) => Boolean(role)))];
-          return jsonResponse(req, { roles });"""
-          if roles_old in source:
-              source = source.replace(roles_old, roles_new, 1)
+          start = source.find("const allowedRoles = new Set(")
+          marker = "return jsonResponse(req, { roles });"
+          end = source.find(marker, start) if start >= 0 else -1
+          roles_new = "\\n".join([
+              'const roleAliases: Record<string, string> = { admin: "admin", administrator: "admin", administrador: "admin", administracion: "admin", "administración": "admin", owner: "admin", cobranza: "cobranza", collection: "cobranza", collector: "cobranza", registro: "registro", registrador: "registro", registro_clientes: "registro", registro_de_clientes: "registro", "registro de clientes": "registro", registration: "registro", gestor: "gestor" };',
+              'const roles = [...new Set((roleRows ?? []).map((row: { role?: string }) => roleAliases[String(row.role ?? "").trim().toLowerCase()] ?? "").filter((role: string) => Boolean(role)))];',
+              "return jsonResponse(req, { roles });",
+          ])
+          if start >= 0 and end >= 0:
+              source = source[:start] + roles_new + source[end + len(marker):]
           elif "const roleAliases: Record<string, string>" not in source:
-              raise SystemExit("No se reconoció el bloque my_roles esperado; se cancela para no publicar una función sin validar.")
+              raise SystemExit("No se reconoció my_roles; se cancela el despliegue.")
           p.write_text(source, encoding="utf-8")
           print("my_roles corregido: roles múltiples y variantes de nombres normalizados.")
           PY
