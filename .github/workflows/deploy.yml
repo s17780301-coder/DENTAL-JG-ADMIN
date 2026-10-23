@@ -69,7 +69,123 @@ jobs:
                 fi
               done
             fi
-            # Mantener la Edge Function existente para que el resto del flujo no la sustituya por una copia vacía.
+                      # El logo oficial horizontal y transparente se toma del mismo paquete que alimenta los módulos.
+          test -s public/modules/registro/logo-dental-jg.png || { echo "::error::Falta el PNG oficial dentro del módulo Registro."; exit 1; }
+          cp -f public/modules/registro/logo-dental-jg.png public/logo-dental-jg.png
+
+          # Ajustes de acceso y caché de las tres interfaces originales, sin reconstruirlas con pantallas genéricas.
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+
+          modules = Path("public/modules")
+          build_id = os.environ.get("GITHUB_SHA", "local")[:10]
+
+          # Registro: aceptar ambos nombres de columna que existen en instalaciones del esquema.
+          registration_js = modules / "registro" / "app.js"
+          source = registration_js.read_text(encoding="utf-8")
+          old = """      const { data, error } = await db.from('app_user_roles')
+                  .select('role')
+                  .eq('user_id', candidateUser.id)
+                  .in('role', ['registro', 'admin']);"""
+          new = """      let roleResult = await db.from('app_user_roles')
+                  .select('role')
+                  .eq('user_id', candidateUser.id)
+                  .in('role', ['registro', 'admin']);
+                if (roleResult.error && /user_id|column|schema cache|does not exist/i.test(roleResult.error.message || '')) {
+                  roleResult = await db.from('app_user_roles')
+                    .select('role')
+                    .eq('id_usuario', candidateUser.id)
+                    .in('role', ['registro', 'admin']);
+                }
+                const { data, error } = roleResult;"""
+          if "let roleResult = await db.from('app_user_roles')" not in source:
+              if old not in source:
+                  raise SystemExit("No se reconoció el bloque de permisos de Registro; se cancela la publicación.")
+              source = source.replace(old, new, 1)
+              registration_js.write_text(source, encoding="utf-8")
+              print("Registro: consulta de rol compatible con user_id / id_usuario.")
+          else:
+              print("Registro: alternativa id_usuario ya instalada.")
+
+          # Administración: validar el rol también al restaurar una sesión guardada.
+          admin_js = modules / "administracion" / "app.js"
+          source = admin_js.read_text(encoding="utf-8")
+          if "async function restoreAdminSession(" not in source:
+              start = source.find("if(configured){try{client=window.supabase.createClient")
+              end = source.find("\\n\\n  // Panel navegador", start) if start >= 0 else -1
+              if start < 0 or end < 0:
+                  raise SystemExit("No se reconoció la restauración de sesión de Administración; se cancela la publicación.")
+              replacement = r"""
+          async function restoreAdminSession(session) {
+            if (!session || !client) return;
+            try {
+              const { data, error } = await client.functions.invoke('administrar-usuarios', { body: { action: 'my_roles' } });
+              if (error || data?.error) throw new Error(data?.error || error?.message || 'No se pudieron verificar los permisos.');
+              const roles = (Array.isArray(data?.roles) ? data.roles : [])
+                .map(role => String(typeof role === 'string' ? role : (role?.role || '')).trim().toLowerCase());
+              if (!roles.some(role => ['admin', 'administrator', 'administrador', 'owner'].includes(role))) {
+                await client.auth.signOut();
+                msg('Acceso denegado: esta cuenta no tiene rol de Administración.');
+                return;
+              }
+              const { data: userData } = await client.auth.getUser();
+              if ($('ownCurrentEmail')) $('ownCurrentEmail').value = userData?.user?.email || '';
+              showApp();
+              await load(true);
+              await loadAdminUsers();
+              realtime();
+            } catch (error) {
+              console.error('No se pudo validar el rol al restaurar la sesión', error);
+              await client.auth.signOut().catch(() => {});
+              msg('No se pudo verificar el permiso de Administración. Inicia sesión de nuevo o revisa administrar-usuarios.');
+            }
+          }
+          if(configured){try{client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}});client.auth.getSession().then(({data,error})=>{if(!error&&data&&data.session)restoreAdminSession(data.session);}).catch(err=>console.warn('No se pudo restaurar la sesión',err));client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&$('appView').classList.contains('hidden'))restoreAdminSession(session);if(event==='SIGNED_OUT'){$('appView').classList.add('hidden');$('loginView').classList.remove('hidden');}});}catch(err){console.error('No se pudo inicializar la sesión',err);}}
+          """
+              source = source[:start] + replacement.strip() + source[end:]
+              admin_js.write_text(source, encoding="utf-8")
+              print("Administración: restauración de sesión protegida con validación de rol.")
+          else:
+              print("Administración: validación de rol en sesión guardada ya instalada.")
+
+          # El alta de pacientes debe seguir exclusiva de Registro, nunca Administración.
+          if "from('patients').insert(payload)" in source or "from(\"patients\").insert(payload)" in source:
+              raise SystemExit("La interfaz Administración contiene un alta de pacientes; se cancela el despliegue.")
+
+          # Forzar una URL nueva de recursos y un nombre de caché independiente por compilación en cada app.
+          for name in ("registro", "cobranza", "administracion"):
+              folder = modules / name
+              html_file = folder / "index.html"
+              html = html_file.read_text(encoding="utf-8")
+              for asset in ("styles.css", "app.js", "config.js", "service-worker.js", "logo-dental-jg.png", "logo-dental-jg.svg", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon.svg"):
+                  pattern = re.escape(asset) + r"(?:\\?v=[^\\\"'\\s>]*)?"
+                  html = re.sub(pattern, asset + "?v=" + build_id, html)
+              html_file.write_text(html, encoding="utf-8")
+
+              sw_file = folder / "service-worker.js"
+              if sw_file.is_file():
+                  sw = sw_file.read_text(encoding="utf-8")
+                  sw, count = re.subn(r"(const\\s+(?:CACHE|CACHE_NAME)\\s*=\\s*)['\\\"][^'\\\"]+['\\\"]", lambda m: m.group(1) + "'dental-jg-" + name + "-" + build_id + "'", sw, count=1)
+                  if count == 0:
+                      raise SystemExit(f"No se reconoció el nombre de caché del service worker de {name}.")
+                  sw_file.write_text(sw, encoding="utf-8")
+
+          # Verificación de navegación, archivos funcionales y preservación del flujo de altas.
+          for name in ("registro", "cobranza", "administracion"):
+              folder = modules / name
+              for filename in ("index.html", "app.js", "styles.css", "config.js"):
+                  if not (folder / filename).is_file() or not (folder / filename).stat().st_size:
+                      raise SystemExit(f"Falta {filename} en el módulo {name}.")
+          admin_source = (modules / "administracion" / "app.js").read_text(encoding="utf-8")
+          if "async function restoreAdminSession(" not in admin_source:
+              raise SystemExit("Administración no tiene validación de sesión restaurada.")
+          if "from('patients').insert(payload)" in admin_source or "from(\"patients\").insert(payload)" in admin_source:
+              raise SystemExit("Administración contiene registro directo de pacientes; solo Registro debe poder dar altas.")
+          print("Tres módulos originales preparados; permisos, caché y logo oficial verificados.")
+          PY
+
+          # Mantener la Edge Function existente para que el resto del flujo no la sustituya por una copia vacía.
             if [[ ! -s "supabase/functions/administrar-usuarios/index.ts" ]]; then
               shopt -s nullglob
               for function_zip in *.zip paquetes/*.zip; do
@@ -959,24 +1075,19 @@ jobs:
           print("Caché de estilos y JavaScript forzada con la versión " + cache_version + ".")
           PY
 
-          # Mostrar una versión visible en la página para confirmar qué publicación está cargada.
+          # No insertar una segunda marca DENTAL JG en la página. La compilación solo versiona la caché del PNG oficial.
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          import os
+          import os, re
           html_path = Path("public/index.html")
           html = html_path.read_text(encoding="utf-8")
-          version = "1.0.7-" + os.environ.get("GITHUB_SHA", "local")[:7]
-          badge_id = "dental-jg-build-version"
-          badge = f'<div id="{badge_id}" aria-label="Versión del panel DENTAL JG">DENTAL JG · VERSIÓN {version}</div>'
+          version = "build-" + os.environ.get("GITHUB_SHA", "local")[:10]
+          html = re.sub(r'logo-dental-jg\\.png(?:\\?v=[^"\\']*)?', 'logo-dental-jg.png?v=' + version, html)
           html = re.sub(r'<div id="dental-jg-build-version"[^>]*>.*?</div>', '', html, flags=re.I|re.S)
-          if "</body>" not in html.lower():
-              raise SystemExit("No se encontró </body>; no se publicará una versión sin indicador visible.")
-          html = re.sub(r'</body>', badge + '\n</body>', html, count=1, flags=re.I)
-          html = re.sub(r'<title>.*?</title>', f'<title>DENTAL JG · Versión {version}</title>', html, count=1, flags=re.I|re.S)
-          html = html.replace('</head>', '<meta name="dental-jg-version" content="' + version + '"><style>#' + badge_id + '{position:static;display:block;width:max-content;max-width:100%;margin:8px auto 4px;padding:0;border:0;border-radius:0;background:transparent;color:#648780;font:400 10px/1.3 system-ui,sans-serif;letter-spacing:.02em;box-shadow:none;opacity:.75;text-align:center;pointer-events:none}</style>\n</head>', 1)
+          html = re.sub(r'<meta name="dental-jg-version"[^>]*>', '', html, flags=re.I)
+          html = re.sub(r'<title>.*?</title>', '<title>DENTAL JG | Panel central</title>', html, count=1, flags=re.I|re.S)
           html_path.write_text(html, encoding="utf-8")
-          print("Indicador visible de versión instalado: DENTAL JG " + version)
+          print("Logo oficial con caché renovada; sin etiqueta DENTAL JG adicional.")
           PY
 
           test -s public/index.html
