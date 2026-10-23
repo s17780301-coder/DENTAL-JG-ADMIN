@@ -103,6 +103,52 @@ jobs:
           if "from('patients').insert(payload)" in admin_source or 'from("patients").insert(payload)' in admin_source:
               raise SystemExit("La interfaz de Administración contiene un INSERT de pacientes; se cancela el despliegue.")
           print("Administración conserva el directorio, sin código de alta de pacientes.")
+
+          # Sincronizar en cada despliegue el formulario Registro web con la actualización 1.0.10.
+          reg = modules / "registro" / "index.html"
+          reg_html = reg.read_text(encoding="utf-8")
+          reg_replacements = [
+              ('<link rel="stylesheet" href="styles.css?v=1.0.9">','<link rel="stylesheet" href="styles.css?v=1.0.10">'),
+              ('<form id="clientForm" class="form"><label>Clínica *','<form id="clientForm" class="form"><section class="form-section"><h3>01 · Datos de la póliza</h3><label>Clínica *'),
+              ('<label>Nombre(s) del titular *','</section><section class="form-section"><h3>02 · Datos del paciente</h3><label>Nombre(s) del titular *'),
+              ('<label>Periodicidad de pago *','</section><section class="form-section"><h3>03 · Costos y formas de pago</h3><label>Periodicidad de pago *'),
+              ('<label>Importe del tabulador ($) *<input id="tabulator" type="number" min="0" step="0.01" value="0" required></label>',''),
+              ('Monto total de la póliza *','Monto total del recibo *'),
+              ('<label>Dirección *','</section><section class="form-section"><h3>04 · Datos de contacto</h3><label>Dirección *'),
+              ('<button id="savePolicy" class="secondary policy-save-bottom" type="button">Guardar tipo de póliza</button>','</section><button id="savePolicy" class="secondary policy-save-bottom" type="button">Guardar tipo de póliza</button>'),
+              ('<script src="config.js?v=1.0.9"></script><script src="app.js?v=1.0.9"></script>','<script src="config.js?v=1.0.10"></script><script src="app.js?v=1.0.10"></script>'),
+              ('<div class="app-version">Versión 1.0.9</div>','<div class="app-version">Versión 1.0.10</div>')
+          ]
+          for old, new in reg_replacements:
+              if old in reg_html:
+                  reg_html = reg_html.replace(old, new, 1)
+          if 'id="tabulator"' in reg_html or '03 · Costos y formas de pago' not in reg_html or 'Monto total del recibo' not in reg_html:
+              raise SystemExit("El formulario Registro web no pasó la validación 1.0.10.")
+          reg.write_text(reg_html, encoding="utf-8")
+
+          reg_js = modules / "registro" / "app.js"
+          reg_source = reg_js.read_text(encoding="utf-8")
+          js_replacements = [
+              ("paymentMethod=$('paymentMethod').value, tabulator=Number($('tabulator').value||0), installmentAmount=Number($('installmentAmount').value||0)", "paymentMethod=$('paymentMethod').value, installmentAmount=Number($('installmentAmount').value||0)"),
+              ("||installments<1||tabulator<0||installmentAmount<=0||policyTotal<=0", "||installments<1||installmentAmount<=0||policyTotal<=0"),
+              ("revisa también el tipo de póliza y el tabulador.", "revisa el tipo de póliza y los importes."),
+              ("p_payment_mode:paymentMode,p_tabulator:tabulator,p_first_payment_date:firstPaymentDate", "p_payment_mode:paymentMode,p_tabulator:0,p_first_payment_date:firstPaymentDate"),
+              ("El total no coincide con el importe por pago multiplicado por el tabulador. Revisa los importes.", "El total no coincide con el importe por pago multiplicado por el número de pagos. Revisa los importes.")
+          ]
+          for old, new in js_replacements:
+              if old in reg_source:
+                  reg_source = reg_source.replace(old, new, 1)
+          if "$('tabulator')" in reg_source or "calcPolicyTotal()" not in reg_source:
+              raise SystemExit("El JavaScript Registro web no pasó la validación de costos y cálculo automático.")
+          reg_js.write_text(reg_source, encoding="utf-8")
+
+          reg_css = modules / "registro" / "styles.css"
+          reg_style = reg_css.read_text(encoding="utf-8")
+          if "Formulario 1.0.10" not in reg_style:
+              reg_style += "\n/* Formulario 1.0.10: secciones agrupadas para Registro móvil */\n.form-section{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px;margin:4px 0 10px;border:1px solid rgba(25,185,176,.28);border-radius:16px;background:linear-gradient(145deg,rgba(25,185,176,.07),rgba(7,59,58,.025))}.form-section h3{grid-column:1/-1;margin:0;padding:0 0 10px;border-bottom:1px solid rgba(25,185,176,.25);color:#087d78;font-size:1rem}.form-section label{min-width:0}@media(max-width:640px){.form-section{grid-template-columns:minmax(0,1fr);padding:12px;gap:12px}.form-section h3{grid-column:1}}\n"
+          reg_css.write_text(reg_style, encoding="utf-8")
+          print("Registro web actualizado: costos y formas de pago, sin tratamiento ni importe de tabulador; total automático.")
+
           css_overrides = {
             "cobranza": r'''
             /* DENTAL JG shared turquoise skin */
