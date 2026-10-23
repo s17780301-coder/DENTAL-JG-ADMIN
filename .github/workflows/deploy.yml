@@ -87,6 +87,22 @@ jobs:
                   page.write_text(html, encoding="utf-8")
 
           # Identidad turquesa compartida: los módulos de la web y las APK reciben la misma capa CSS.
+          # Administración conserva consulta, edición administrativa permitida y saldos;
+          # nunca debe registrar pacientes: los nuevos expedientes salen de Registro de clientes.
+          admin_js = modules / "administracion" / "app.js"
+          admin_source = admin_js.read_text(encoding="utf-8")
+          start_marker = "  $('patientForm')?.addEventListener('submit',async e=>{"
+          end_marker = "  $('clinicForm').addEventListener('submit',async e=>{"
+          start = admin_source.find(start_marker)
+          if start >= 0:
+              end = admin_source.find(end_marker, start)
+              if end < 0:
+                  raise SystemExit("No se encontró el final del manejador de altas en Administración.")
+              admin_source = admin_source[:start] + "  // Altas bloqueadas aquí: Registro de clientes es el único módulo autorizado.\\n  " + admin_source[end:]
+              admin_js.write_text(admin_source, encoding="utf-8")
+          if "from('patients').insert(payload)" in admin_source or 'from("patients").insert(payload)' in admin_source:
+              raise SystemExit("La interfaz de Administración contiene un INSERT de pacientes; se cancela el despliegue.")
+          print("Administración conserva el directorio, sin código de alta de pacientes.")
           css_overrides = {
             "cobranza": r'''
             /* DENTAL JG shared turquoise skin */
