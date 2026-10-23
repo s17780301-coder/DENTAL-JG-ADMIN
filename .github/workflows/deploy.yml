@@ -1274,6 +1274,32 @@ jobs:
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
 
+      - name: Unificar versión visible del portal y los tres módulos en 1.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path("public")
+          for module in ("registro", "cobranza", "administracion"):
+              path = root / "modules" / module / "index.html"
+              if not path.is_file():
+                  raise SystemExit(f"Falta el HTML publicado de {module}.")
+              html = path.read_text(encoding="utf-8")
+              html, count = re.subn(r"Versión\\s+[0-9]+(?:\\.[0-9]+){1,3}", "Versión 1.0", html, flags=re.I)
+              if count == 0:
+                  raise SystemExit(f"No se encontró la etiqueta de versión de {module}; no se publica una versión incoherente.")
+              path.write_text(html, encoding="utf-8")
+              print(f"{module}: etiqueta visible Versión 1.0")
+          portal = root / "index.html"
+          html = portal.read_text(encoding="utf-8")
+          if "PLATAFORMA DENTAL JG · Versión 1.0" not in html:
+              html = html.replace("Plataforma segura · Acceso según permisos asignados", "Plataforma segura · Acceso según permisos asignados · Versión 1.0")
+          portal.write_text(html, encoding="utf-8")
+          print("Portal central: versión visible 1.0")
+          PY
+
       - name: Instalar CLI de Supabase
         if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && hashFiles('supabase/functions/administrar-usuarios/index.ts') != '' }}
         uses: supabase/setup-cli@v1
