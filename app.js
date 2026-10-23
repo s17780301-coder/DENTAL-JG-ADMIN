@@ -50,11 +50,20 @@ function setNavigation(){
 }
 function view(name){
  if(!allowed(name)){note("Tu cuenta no tiene permiso para abrir ese módulo.");return}
+ const target=$(name);
+ if(!target){note("No se encontró la sección seleccionada. Actualiza el panel e inténtalo de nuevo.");return}
  document.querySelectorAll(".view").forEach(x=>x.classList.add("hidden"));
- $(name).classList.remove("hidden");
+ target.classList.remove("hidden");
  document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("active",x.dataset.view===name));
  $("viewTitle").textContent=({patients:"Registro de clientes",collection:"Cobranza",admin:"Administración"})[name]||name;
  $("notice").classList.add("hidden");
+ // Confirma visualmente la navegación: al tocar un icono, desplaza la pantalla
+ // hasta el inicio del módulo seleccionado, especialmente en móviles.
+ requestAnimationFrame(()=>{
+   target.scrollIntoView({behavior:"smooth",block:"start"});
+   target.setAttribute("tabindex","-1");
+   target.focus({preventScroll:true});
+ });
 }
 function setCollectionPanel(panel){
  document.querySelectorAll(".collection-panel").forEach(x=>x.classList.toggle("hidden",x.id!==panel));
