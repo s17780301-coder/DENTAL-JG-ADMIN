@@ -107,7 +107,7 @@ jobs:
           # Conservar la función del servidor para publicarla por separado en Supabase.
           if [[ -s "$panel_dir/supabase/functions/administrar-usuarios/index.ts" ]]; then
             mkdir -p supabase/functions/administrar-usuarios
-            cp "$panel_dir/supabase/functions/administrar-usuarios/index.ts" supabase/functions/administrar-usuarios/index.ts
+            if [[ "$panel_dir" != "." ]]; then cp "$panel_dir/supabase/functions/administrar-usuarios/index.ts" supabase/functions/administrar-usuarios/index.ts; fi
             cat > supabase/config.toml <<'TOML'
           project_id = "nfwhymppyzoriihdwlyc"
 
