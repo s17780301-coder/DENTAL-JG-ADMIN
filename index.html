@@ -13,7 +13,7 @@
 
 <section id="appPicker" class="portal-wrap" aria-labelledby="portalTitle">
   <header class="portal-header">
-    <div class="portal-logo-frame"><img class="portal-logo" src="./logo-dental-jg.svg?v=10.8.73" alt="Logotipo DENTAL JG"></div>
+    <div class="portal-logo-frame"><img class="portal-logo" src="./modules/cobranza/logo-dental-jg.png?v=20261023" alt="Logotipo DENTAL JG"></div>
     <div class="portal-brand"><p class="eyebrow" id="portalTitle">PLATAFORMA INTEGRAL</p><p class="portal-subtitle">Selecciona el área a la que deseas ingresar</p></div>
   </header>
   <div class="portal-rule"><span></span><p>ACCESO APLICACIONES</p><span></span></div>
@@ -37,10 +37,6 @@
 
 
 <section id="moduleStage" class="hidden" style="position:fixed;inset:0;z-index:9999;background:#f4fbfa;display:none;flex-direction:column;">
-  <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#073b3a;color:#fff;box-shadow:0 2px 12px #0002;">
-    <button id="moduleBack" type="button" style="border:1px solid #8edbd4;background:transparent;color:#fff;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer;">← Volver al panel</button>
-    <strong id="moduleHeading" style="font-size:14px;">DENTAL JG</strong>
-  </div>
   <iframe id="moduleFrame" title="Módulo DENTAL JG" style="display:block;border:0;width:100%;height:calc(100% - 52px);background:#fff;flex:1;" allow="clipboard-read; clipboard-write"></iframe>
 </section>
 <script>
@@ -53,19 +49,24 @@
   window.openDentalModule = function (name) {
     if (!labels[name]) return;
     heading.textContent = labels[name];
-    frame.src = './modules/' + name + '/index.html';
+    frame.src = './modules/' + name + '/index.html?build=20261023';
     portal.style.display = 'none';
     stage.classList.remove('hidden');
     stage.style.display = 'flex';
+    stage.style.opacity = '0';
+    stage.style.transform = 'translateY(14px)';
+    requestAnimationFrame(() => { stage.style.transition = 'opacity .22s ease, transform .22s ease'; stage.style.opacity = '1'; stage.style.transform = 'translateY(0)'; stage.scrollIntoView({behavior:'smooth',block:'start'}); });
     document.body.style.overflow = 'hidden';
   };
-  document.getElementById('moduleBack').addEventListener('click', () => {
+  window.addEventListener('message', event => { if (event.origin !== location.origin || event.data?.type !== 'dental-jg-back') return; closeDentalModule(); });
+  function closeDentalModule() {
     frame.src = 'about:blank';
     stage.style.display = 'none';
     stage.classList.add('hidden');
     portal.style.display = '';
     document.body.style.overflow = '';
-  });
+  }
+  document.getElementById('moduleBack')?.addEventListener('click', closeDentalModule);
 })();
 </script>
 
