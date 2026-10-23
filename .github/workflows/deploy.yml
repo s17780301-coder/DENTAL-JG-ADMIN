@@ -184,6 +184,10 @@ jobs:
           print("CORS verificado: portal web + Android WebView + encabezados Supabase.")
           PY
 
+          echo "=== DIAGNÓSTICO TEMPORAL my_roles ==="
+          grep -n -B 12 -A 28 -E "my_roles|app_user_roles" supabase/functions/administrar-usuarios/index.ts | head -180 || true
+          echo "=== FIN DIAGNÓSTICO my_roles ==="
+
           # Añadir delete_user porque la interfaz de Usuarios incluye esa acción.
           # Protege la cuenta actual y el último administrador antes de borrar en Auth.
           python3 - <<'PY'
