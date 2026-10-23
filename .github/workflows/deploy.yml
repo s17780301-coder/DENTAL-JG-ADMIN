@@ -1300,6 +1300,27 @@ jobs:
           print("Portal central: versión visible 1.0")
           PY
 
+      - name: Validar sintaxis y controles críticos de los tres módulos web
+        shell: bash
+        run: |
+          set -euo pipefail
+          for module in registro cobranza administracion; do
+            test -s "public/modules/$module/index.html"
+            test -s "public/modules/$module/app.js"
+            test -s "public/modules/$module/styles.css"
+            node --check "public/modules/$module/app.js"
+            grep -Eq 'Versión[[:space:]]+1\.0' "public/modules/$module/index.html"
+            echo "OK $module: archivos presentes, JavaScript válido y versión 1.0"
+          done
+          grep -Fq "register_dental_jg_patient" public/modules/registro/app.js
+          grep -Fq "delete_archived_patient" public/modules/cobranza/app.js
+          grep -Fq "archive_patient_account" public/modules/administracion/app.js
+          if grep -Eq "from\\(['\"]patients['\"]\\)[[:space:]]*\\.(insert|upsert)" public/modules/administracion/app.js; then
+            echo "::error::Administración contiene una ruta de alta de pacientes; el único módulo autorizado es Registro."
+            exit 1
+          fi
+          echo "OK: altas por RPC de Registro, eliminación histórica en Cobranza, archivo en Administración y sin INSERT de pacientes desde Administración."
+
       - name: Instalar CLI de Supabase
         if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && hashFiles('supabase/functions/administrar-usuarios/index.ts') != '' }}
         uses: supabase/setup-cli@v1
