@@ -950,6 +950,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+          import os
           html_path = Path("public/index.html")
           html = html_path.read_text(encoding="utf-8")
           version = "1.0.7-" + os.environ.get("GITHUB_SHA", "local")[:7]
