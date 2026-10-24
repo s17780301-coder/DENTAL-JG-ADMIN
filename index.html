@@ -340,17 +340,23 @@
 </div>
 
 
-<!-- Protección de entrada: la URL raíz siempre abre el selector central, nunca un módulo automáticamente. -->
+<!-- Protección de entrada: la raíz del sitio siempre muestra el selector de módulos. -->
 <script>
 (() => {
-  const path = location.pathname.replace(/\\/+$/, "") || "/";
-  const isRoot = path === "/" || path.endsWith("/DENTAL-JG-ADMIN");
-  if (!isRoot) return;
+  const path = window.location.pathname;
+  const isPortal = path === "/" || path === "/DENTAL-JG-ADMIN" || path === "/DENTAL-JG-ADMIN/" || path.endsWith("/DENTAL-JG-ADMIN/");
+  if (!isPortal) return;
   const portal = document.getElementById("appPicker");
   const stage = document.getElementById("moduleStage");
   const frame = document.getElementById("moduleFrame");
-  if (portal) { portal.classList.remove("hidden"); portal.style.display = "flex"; }
-  if (stage) { stage.classList.add("hidden"); stage.style.display = "none"; }
+  if (portal) {
+    portal.classList.remove("hidden");
+    portal.style.display = "flex";
+  }
+  if (stage) {
+    stage.classList.add("hidden");
+    stage.style.display = "none";
+  }
   if (frame) frame.src = "about:blank";
   document.body.style.overflow = "";
 })();
