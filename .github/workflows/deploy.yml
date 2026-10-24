@@ -1296,6 +1296,43 @@ jobs:
           echo "Archivos preparados para GitHub Pages:"
           ls -lah public
 
+      - name: Sincronizar Cobranza corregida desde el código fuente Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/fixes/cobranza/app.js" -o public/modules/cobranza/app.js
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/s17780301-coder/Gestor-aAsistente/main/fixes/cobranza/index.html" -o public/modules/cobranza/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+          js_path = Path("public/modules/cobranza/app.js")
+          html_path = Path("public/modules/cobranza/index.html")
+          js = js_path.read_text(encoding="utf-8")
+          html = html_path.read_text(encoding="utf-8")
+          return_bar = """<div data-dental-back style="padding:8px 12px;background:#073b3a;position:relative;z-index:5"><button type="button" onclick="parent.postMessage({type:'dental-jg-back'},location.origin)" style="border:1px solid #8edbd4;background:transparent;color:#fff;border-radius:10px;padding:9px 13px;font:inherit;cursor:pointer">← Volver al panel</button></div>"""
+          if "data-dental-back" not in html:
+              html, count = re.subn(r"<body(?:\s[^>]*)?>", lambda m: m.group(0) + return_bar, html, count=1, flags=re.I)
+              if count != 1:
+                  raise SystemExit("No se pudo agregar el botón de regreso al panel en Cobranza.")
+          build = "build-" + os.environ.get("GITHUB_SHA", "local")[:10]
+          html, css_count = re.subn(r'styles\.css(?:\?v=[^"\']*)?', "styles.css?v=" + build, html, count=1)
+          html, js_count = re.subn(r'app\.js(?:\?v=[^"\']*)?', "app.js?v=" + build, html, count=1)
+          if css_count != 1 or js_count != 1:
+              raise SystemExit("No se pudo actualizar la caché de CSS/JS de Cobranza.")
+          if any(marker in js + html for marker in ["portfolioAssignmentRows", "renderPortfolioAssignments", "data-save-portfolio", "Guardar asignación"]):
+              raise SystemExit("Se detectó la interfaz antigua de asignación manual de carteras.")
+          for marker in ["assigned_manager_id", "function generatePortfolios(automatic=false)", "async function createExtraReceipts()", "create_scheduled_collection_receipt"]:
+              if marker not in js:
+                  raise SystemExit("Falta en Cobranza la función esperada: " + marker)
+          for marker in ['id="generateExtraReceipts"', 'id="extraReceiptsDialog"', "Generar recibos de más"]:
+              if marker not in html:
+                  raise SystemExit("Falta la interfaz de recibos adicionales: " + marker)
+          js_path.write_text(js, encoding="utf-8")
+          html_path.write_text(html, encoding="utf-8")
+          print("Cobranza web sincronizada con la fuente corregida; versión visible 1.0.")
+          PY
+          node --check public/modules/cobranza/app.js
+
       - name: Reparar eliminación de expedientes archivados en Cobranza web
         shell: bash
         run: |
