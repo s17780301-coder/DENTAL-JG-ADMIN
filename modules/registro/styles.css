@@ -10,9 +10,3 @@
 @media(max-width:600px){.brand img{width:min(42vw,180px)!important;height:auto!important;max-height:68px!important}}
 
 .app-version{font:500 10px/1.4 system-ui,sans-serif;letter-spacing:.25px;text-align:center;color:#8ca1b3;opacity:.72;padding:8px 12px 12px;margin-top:8px}
-
-/* Formulario 1.0.10: secciones agrupadas para el mismo flujo de Registro móvil */
-.form-section{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px;margin:4px 0 10px;border:1px solid rgba(25,185,176,.28);border-radius:16px;background:linear-gradient(145deg,rgba(25,185,176,.07),rgba(7,59,58,.025))}.form-section h3{grid-column:1/-1;margin:0;padding:0 0 10px;border-bottom:1px solid rgba(25,185,176,.25);color:#087d78;font-size:1rem;letter-spacing:.02em}.form-section label{min-width:0}.form-section small{grid-column:1/-1;color:#5c7776;font-size:.82rem}@media(max-width:640px){.form-section{grid-template-columns:minmax(0,1fr);padding:12px;gap:12px}.form-section h3{grid-column:1}}
-
-/* Registro 1.0.11: agrupación clara de secciones y vista móvil */
-.form-section{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px;margin:4px 0 10px;border:1px solid rgba(25,185,176,.32);border-radius:16px;background:linear-gradient(145deg,rgba(25,185,176,.07),rgba(7,59,58,.025))}.form-section h3{grid-column:1/-1;margin:0;padding:0 0 10px;border-bottom:1px solid rgba(25,185,176,.25);color:#087d78;font-size:1rem}.form-section label{min-width:0}.form-section small{grid-column:1/-1;color:#5c7776;font-size:.82rem}@media(max-width:640px){.form-section{grid-template-columns:minmax(0,1fr);padding:12px;gap:12px}.form-section h3{grid-column:1}}
