@@ -1,6 +1,6 @@
 name: Publicar panel DENTAL JG
 # Revalidación completa: desplegar la Edge Function administrar-usuarios cuando exista SUPABASE_ACCESS_TOKEN
-# Rebuild 2026-10-24: sincronizar el modal de recibos adicionales sin cantidad precargada desde Gestor-aAsistente.
+# Rebuild 2026-10-24: sincronizar corrección del botón Generar / actualizar carteras desde Gestor-aAsistente.
 on:
   push:
     branches: [main]
