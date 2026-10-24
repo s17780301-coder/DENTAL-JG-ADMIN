@@ -107,6 +107,25 @@ jobs:
           # Sincronizar en cada despliegue el formulario Registro web con la actualización 1.0.10.
           reg = modules / "registro" / "index.html"
           reg_html = reg.read_text(encoding="utf-8")
+
+          # Formulario acordado: quitar apellidos separados y Tratamiento.
+          reg_html, removed_surnames = re.subn(
+              r"<label\b[^>]*>(?:(?!</label>).)*Apellidos del paciente(?:(?!</label>).)*</label>",
+              "", reg_html, count=1, flags=re.I | re.S)
+          reg_html, removed_treatment = re.subn(
+              r"<label\b[^>]*>(?:(?!</label>).)*Tratamiento(?:(?!</label>).)*</label>",
+              "", reg_html, count=1, flags=re.I | re.S)
+          if removed_surnames != 1 or removed_treatment != 1:
+              raise SystemExit("El formulario Registro no contiene exactamente los campos esperados para retirar.")
+
+          # Los nombres se convierten automáticamente a mayúsculas al escribir.
+          def uppercase_name_label(match):
+              label = match.group(0)
+              if re.search(r"Nombre\(s\) del titular|Nombre\(s\) del paciente", label, re.I):
+                  label = re.sub(r"<input\b", """<input oninput="this.value=this.value.toLocaleUpperCase('es-MX')" """, label, count=1, flags=re.I)
+              return label
+          reg_html = re.sub(r"<label\b[^>]*>.*?</label>", uppercase_name_label, reg_html, flags=re.I | re.S)
+
           reg_replacements = [
               ('<link rel="stylesheet" href="styles.css?v=1.0.9">','<link rel="stylesheet" href="styles.css?v=1.0.10">'),
               ('<form id="clientForm" class="form"><label>Clínica *','<form id="clientForm" class="form"><section class="form-section"><h3>01 · Datos de la póliza</h3><label>Clínica *'),
